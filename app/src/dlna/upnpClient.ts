@@ -98,7 +98,7 @@ export async function setTransportUri(device: UpnpDevice, streamUrl: string, met
     `<dc:creator>${artist}</dc:creator>` +
     `<upnp:album>${album}</upnp:album>` +
     `<upnp:class>object.item.audioItem.musicTrack</upnp:class>` +
-    `<res protocolInfo="http-get:*:audio/mpeg:*">${escapedUrl}</res>` +
+    `<res protocolInfo="http-get:*:audio/flac:*">${escapedUrl}</res>` +
     `</item>` +
     `</DIDL-Lite>`;
 
