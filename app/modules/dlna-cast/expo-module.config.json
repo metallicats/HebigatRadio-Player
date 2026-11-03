@@ -1,0 +1,7 @@
+{
+  "name": "dlna-cast",
+  "platforms": ["android"],
+  "android": {
+    "modules": ["com.getsubwave.dlnacast.DlnaCastModule"]
+  }
+}

@@ -1,6 +1,6 @@
-// AirPlay and Cast require native views to open their system pickers.
+// AirPlay, Cast and DLNA outputs.
 
-import { AudioLines, ChevronRight, Info, MoonStar, Palette } from 'lucide-react-native';
+import { AudioLines, ChevronRight, Info, MoonStar, Palette, Radio } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { CastButton } from 'react-native-google-cast';
@@ -12,6 +12,9 @@ export interface BackPanelDrawerProps {
   castAvailable: boolean;
   /** Cast device name while a session is active, else null. */
   castingTo: string | null;
+  dlnaConnected?: boolean;
+  dlnaDeviceName?: string | null;
+  onOpenDlna?: () => void;
   sleepActive: boolean;
   sleepRemainingSec: number | null;
   themeName: string | null;
@@ -27,6 +30,9 @@ export interface BackPanelDrawerProps {
 export default function BackPanelDrawer({
   castAvailable,
   castingTo,
+  dlnaConnected,
+  dlnaDeviceName,
+  onOpenDlna,
   sleepActive,
   sleepRemainingSec,
   themeName,
@@ -37,37 +43,42 @@ export default function BackPanelDrawer({
   onOpenAbout,
 }: BackPanelDrawerProps) {
   const { colors } = useTheme();
-  const hasOutputs = Platform.OS === 'ios' || castAvailable;
 
   return (
     <View>
-      {hasOutputs ? (
-        <View style={{ marginBottom: 18 }}>
-          <SectionLabel text="OUTPUT" />
-          <View className="flex-row" style={{ gap: 12, marginTop: 8 }}>
-            {Platform.OS === 'ios' ? (
-              <Socket label="AIRPLAY" sub="HomePod · Apple TV">
-                <AirplayButton
-                  tint={colors.ink}
-                  activeTint={colors.accent}
-                  style={{ width: 30, height: 30 }}
-                />
-              </Socket>
-            ) : null}
-            {castAvailable ? (
-              <Socket
-                label="CAST"
-                sub={castingTo ? `→ ${castingTo}` : 'Chromecast · TV'}
-                active={!!castingTo}
-              >
-                <CastButton
-                  style={{ width: 30, height: 30, tintColor: castingTo ? colors.accent : colors.ink }}
-                />
-              </Socket>
-            ) : null}
-          </View>
+      <View style={{ marginBottom: 18 }}>
+        <SectionLabel text="OUTPUT" />
+        <View className="flex-row" style={{ gap: 12, marginTop: 8 }}>
+          {Platform.OS === 'ios' ? (
+            <Socket label="AIRPLAY" sub="HomePod · Apple TV">
+              <AirplayButton
+                tint={colors.ink}
+                activeTint={colors.accent}
+                style={{ width: 30, height: 30 }}
+              />
+            </Socket>
+          ) : null}
+          {castAvailable ? (
+            <Socket
+              label="CAST"
+              sub={castingTo ? `→ ${castingTo}` : 'Chromecast · TV'}
+              active={!!castingTo}
+            >
+              <CastButton
+                style={{ width: 30, height: 30, tintColor: castingTo ? colors.accent : colors.ink }}
+              />
+            </Socket>
+          ) : null}
+          <Socket
+            label="DLNA"
+            sub={dlnaDeviceName ? `→ ${dlnaDeviceName}` : 'Denon · UPnP'}
+            active={!!dlnaConnected}
+            onPress={onOpenDlna}
+          >
+            <Radio size={22} color={dlnaConnected ? colors.accent : colors.ink} />
+          </Socket>
         </View>
-      ) : null}
+      </View>
 
       <SectionLabel text="TIMER" />
       <PanelRow
@@ -134,15 +145,17 @@ function Socket({
   label,
   sub,
   active,
+  onPress,
   children,
 }: {
   label: string;
   sub: string;
   active?: boolean;
+  onPress?: () => void;
   children: ReactNode;
 }) {
   const { colors } = useTheme();
-  return (
+  const content = (
     <View style={{ alignItems: 'center', width: 104 }}>
       <View
         style={{
@@ -172,6 +185,21 @@ function Socket({
       </Text>
     </View>
   );
+
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        hitSlop={8}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return content;
 }
 
 function PanelRow({

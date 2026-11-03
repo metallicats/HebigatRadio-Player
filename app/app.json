@@ -17,10 +17,12 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.getsubwave.app",
+      "bundleIdentifier": "com.metallicats.subwave.app",
       "appleTeamId": "BU9RD766GN",
       "entitlements": {
-        "com.apple.security.application-groups": ["group.com.getsubwave.app"]
+        "com.apple.security.application-groups": [
+          "group.com.getsubwave.app"
+        ]
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -36,7 +38,7 @@
       }
     },
     "android": {
-      "package": "com.getsubwave.app",
+      "package": "com.metallicats.subwave.app",
       "adaptiveIcon": {
         "backgroundColor": "#100e0c",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -46,7 +48,11 @@
       "permissions": [
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
-        "android.permission.WAKE_LOCK"
+        "android.permission.WAKE_LOCK",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.CHANGE_WIFI_MULTICAST_STATE"
       ],
       "predictiveBackGestureEnabled": false
     },
@@ -114,9 +120,35 @@
       "directoryUrl": "https://www.getsubwave.com",
       "router": {},
       "eas": {
-        "projectId": "b834b64c-f694-4f45-b3fa-0f2c0a4df5ba"
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "bundleIdentifier": "com.metallicats.subwave.app.widget",
+                  "targetName": "SUBWAVELive",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.getsubwave.app"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.metallicats.subwave.app.widget",
+                  "targetName": "SUBWAVELive",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.getsubwave.app"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "82556340-3c38-4b69-9835-eea34d7a4a07"
       }
     },
-    "owner": "pinku1"
+    "owner": "metallicats"
   }
 }

@@ -65,6 +65,8 @@ import TransportBar from './TransportBar';
 import Waveform from './Waveform';
 import AboutDrawer from './drawers/AboutDrawer';
 import BackPanelDrawer from './drawers/BackPanelDrawer';
+import DlnaDrawer from './drawers/DlnaDrawer';
+import { useDlna } from '@/hooks/useDlna';
 import BoothDrawer from './drawers/BoothDrawer';
 import FormatDrawer from './drawers/FormatDrawer';
 import LyricsDrawer from './drawers/LyricsDrawer';
@@ -88,7 +90,7 @@ const HOME_INDEX = PAGES.findIndex((p) => p.id === 'now');
 const BOOTH_INDEX = PAGES.findIndex((p) => p.id === 'booth');
 const TIMELINE_INDEX = PAGES.findIndex((p) => p.id === 'timeline');
 
-type SheetId = 'panel' | 'sleep' | 'themes' | 'format' | 'about' | 'lyrics';
+type SheetId = 'panel' | 'sleep' | 'themes' | 'format' | 'about' | 'lyrics' | 'dlna';
 const SHEET_TITLES: Record<SheetId, string> = {
   panel: 'Back panel',
   sleep: 'Sleep timer',
@@ -96,6 +98,7 @@ const SHEET_TITLES: Record<SheetId, string> = {
   format: 'Stream format',
   about: 'About SUB/WAVE',
   lyrics: 'Lyrics',
+  dlna: 'DLNA / UPnP Speakers',
 };
 
 const SchedulePage = memo(function SchedulePage({
@@ -241,10 +244,14 @@ export default function PlayerScreen() {
 
   const trackLike = useTrackLike(api, nowPlaying?.subsonic_id ?? null);
 
-  const { player, cast } = useCast(api, localPlayer, {
+  const { player: castPlayer, cast } = useCast(api, localPlayer, {
     stationName,
     djName,
     artworkUrl: coverSrc,
+  });
+  const { player, dlna } = useDlna(api, castPlayer, {
+    stationName,
+    djName,
   });
   const { tunedIn, status, volume, setVolume, tune, stop, toggleMute, muted } = player;
 
@@ -572,7 +579,7 @@ export default function PlayerScreen() {
             djName={djName}
             activeShow={activeShow}
             onOpenPanel={() => setActiveSheet('panel')}
-            panelActive={sleep.active || cast.connected}
+            panelActive={sleep.active || cast.connected || dlna.connected}
           />
           <FreqBand
             pages={PAGES}
@@ -599,7 +606,7 @@ export default function PlayerScreen() {
             latencyMs={signal.latencyMs}
             signalQuality={signal.quality}
             listeners={listenerCount}
-            castingTo={cast.deviceName}
+            castingTo={dlna.deviceName || cast.deviceName}
           />
         </View>
       </SafeAreaView>
@@ -624,6 +631,12 @@ export default function PlayerScreen() {
           <BackPanelDrawer
             castAvailable={cast.available}
             castingTo={cast.deviceName}
+            dlnaConnected={dlna.connected}
+            dlnaDeviceName={dlna.deviceName}
+            onOpenDlna={() => {
+              dlna.startScan();
+              setActiveSheet('dlna');
+            }}
             sleepActive={sleep.active}
             sleepRemainingSec={sleep.remainingSec}
             themeName={themeName}
@@ -657,6 +670,18 @@ export default function PlayerScreen() {
             onToggle={lyricsPref.toggle}
             track={lyricsTrack}
             fits={lyricsFit}
+          />
+        ) : null}
+                {activeSheet === 'dlna' ? (
+          <DlnaDrawer
+            devices={dlna.devices}
+            connected={dlna.connected}
+            activeDeviceName={dlna.deviceName}
+            onScan={dlna.startScan}
+            onConnect={dlna.connectDevice}
+            onDisconnect={dlna.disconnect}
+            onAddManualIp={dlna.addManualDevice}
+            onBack={() => setActiveSheet('panel')}
           />
         ) : null}
         {activeSheet === 'about' ? (
