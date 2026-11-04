@@ -86,14 +86,20 @@ export interface DlnaMeta {
 }
 
 export function getProtocolInfo(streamUrl: string): string {
+  // Denon AVR-X2800H / HEOS DLNA stack requires full DLNA profile parameters for live streaming:
+  // DLNA.ORG_OP=00 (live stream, no seeking)
+  // DLNA.ORG_CI=0 (no transcoding)
+  // DLNA.ORG_FLAGS=01A00000000000000000000000000000 (streaming mode / DLNA v1.5 compliant)
+  const dlnaParams = 'DLNA.ORG_OP=00;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01A00000000000000000000000000000';
+
   if (streamUrl.includes('.flac') || streamUrl.includes('.ogg')) {
-    // The server delivers an Ogg-FLAC container with Content-Type: application/ogg
-    return 'http-get:*:application/ogg:*';
+    // Some HEOS firmware requires audio/flac or application/ogg with DLNA parameters
+    return `http-get:*:audio/flac:${dlnaParams}`;
   }
   if (streamUrl.includes('.aac')) {
-    return 'http-get:*:audio/aac:*';
+    return `http-get:*:audio/aac:${dlnaParams}`;
   }
-  return 'http-get:*:audio/mpeg:*';
+  return `http-get:*:audio/mpeg:${dlnaParams}`;
 }
 
 export async function setTransportUri(device: UpnpDevice, streamUrl: string, meta: DlnaMeta): Promise<void> {
