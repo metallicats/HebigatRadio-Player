@@ -1,4 +1,4 @@
-// The native scroll driver moves the needle without React renders.
+﻿// The native scroll driver moves the needle without React renders.
 // Memoized pages rely on useStationFeed preserving unchanged payload identities.
 
 import { BlurView } from 'expo-blur';
@@ -252,7 +252,7 @@ export default function PlayerScreen() {
   const { player, dlna } = useDlna(api, castPlayer, {
     stationName,
     djName,
-  });
+  }, streamFormat.format);
   const { tunedIn, status, volume, setVolume, tune, stop, toggleMute, muted } = player;
 
   // Private station (#478): the private player hides the whole face until the

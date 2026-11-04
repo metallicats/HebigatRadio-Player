@@ -17,7 +17,7 @@ export interface DlnaMeta {
   djName?: string;
 }
 
-export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta) {
+export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta, streamFormat?: import('@/lib/streamFormat').StreamFormat) {
   const [devices, setDevices] = useState<UpnpDevice[]>([]);
   const [activeDevice, setActiveDevice] = useState<UpnpDevice | null>(null);
   const [dlnaTunedIn, setDlnaTunedIn] = useState(false);
@@ -75,7 +75,7 @@ export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta) {
         localRef.current.stop();
         setDlnaTunedIn(true);
         try {
-          await setTransportUri(device, apiRef.current.streamUrl(), {
+          await setTransportUri(device, apiRef.current.streamUrl(streamFormat), {
             title: metaRef.current.stationName,
             artist: metaRef.current.djName,
           });
@@ -109,7 +109,7 @@ export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta) {
     }
     setDlnaTunedIn(true);
     try {
-      await setTransportUri(activeDevice, apiRef.current.streamUrl(), {
+      await setTransportUri(activeDevice, apiRef.current.streamUrl(streamFormat), {
         title: metaRef.current.stationName,
         artist: metaRef.current.djName,
       });
