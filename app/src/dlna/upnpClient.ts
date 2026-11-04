@@ -85,11 +85,23 @@ export interface DlnaMeta {
   album?: string;
 }
 
+export function getProtocolInfo(streamUrl: string): string {
+  if (streamUrl.includes('.flac') || streamUrl.includes('.ogg')) {
+    // The server delivers an Ogg-FLAC container with Content-Type: application/ogg
+    return 'http-get:*:application/ogg:*';
+  }
+  if (streamUrl.includes('.aac')) {
+    return 'http-get:*:audio/aac:*';
+  }
+  return 'http-get:*:audio/mpeg:*';
+}
+
 export async function setTransportUri(device: UpnpDevice, streamUrl: string, meta: DlnaMeta): Promise<void> {
   const title = escapeXml(meta.title || 'SUB/WAVE');
   const artist = escapeXml(meta.artist || 'Live Broadcast');
   const album = escapeXml(meta.album || 'SUB/WAVE');
   const escapedUrl = escapeXml(streamUrl);
+  const protocolInfo = getProtocolInfo(streamUrl);
 
   const didl =
     `<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">` +
@@ -98,7 +110,7 @@ export async function setTransportUri(device: UpnpDevice, streamUrl: string, met
     `<dc:creator>${artist}</dc:creator>` +
     `<upnp:album>${album}</upnp:album>` +
     `<upnp:class>object.item.audioItem.musicTrack</upnp:class>` +
-    `<res protocolInfo="http-get:*:audio/flac:*">${escapedUrl}</res>` +
+    `<res protocolInfo="${protocolInfo}">${escapedUrl}</res>` +
     `</item>` +
     `</DIDL-Lite>`;
 
