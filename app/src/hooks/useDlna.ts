@@ -29,6 +29,10 @@ export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta, s
   useEffect(() => { apiRef.current = api; }, [api]);
   const metaRef = useRef(meta);
   useEffect(() => { metaRef.current = meta; }, [meta]);
+  // Keep the stream format in a ref so connectDevice/tune closures always
+  // read the latest selection without needing to be recreated.
+  const streamFormatRef = useRef(streamFormat);
+  useEffect(() => { streamFormatRef.current = streamFormat; }, [streamFormat]);
 
   const startScan = useCallback(() => {
     setDevices([]);
@@ -75,7 +79,7 @@ export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta, s
         localRef.current.stop();
         setDlnaTunedIn(true);
         try {
-          await setTransportUri(device, apiRef.current.streamUrl(streamFormat), {
+          await setTransportUri(device, apiRef.current.streamUrl(streamFormatRef.current), {
             title: metaRef.current.stationName,
             artist: metaRef.current.djName,
           });
@@ -109,7 +113,7 @@ export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta, s
     }
     setDlnaTunedIn(true);
     try {
-      await setTransportUri(activeDevice, apiRef.current.streamUrl(streamFormat), {
+      await setTransportUri(activeDevice, apiRef.current.streamUrl(streamFormatRef.current), {
         title: metaRef.current.stationName,
         artist: metaRef.current.djName,
       });
