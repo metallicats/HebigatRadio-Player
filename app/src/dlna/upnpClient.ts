@@ -86,20 +86,20 @@ export interface DlnaMeta {
 }
 
 export function getProtocolInfo(streamUrl: string): string {
-  // Denon AVR-X2800H / HEOS DLNA stack requires full DLNA profile parameters for live streaming:
-  // DLNA.ORG_OP=00 (live stream, no seeking)
-  // DLNA.ORG_CI=0 (no transcoding)
-  // DLNA.ORG_FLAGS=01A00000000000000000000000000000 (streaming mode / DLNA v1.5 compliant)
+  // Denon AVR-X2800H (HEOS) live online radio stream requirements:
+  // DLNA.ORG_OP=00 (live stream, unseekable)
+  // DLNA.ORG_CI=0 (native format)
+  // DLNA.ORG_FLAGS=01A00000000000000000000000000000 (streaming transfer mode, unseekable live stream)
   const dlnaParams = 'DLNA.ORG_OP=00;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01A00000000000000000000000000000';
 
   if (streamUrl.includes('.flac') || streamUrl.includes('.ogg')) {
-    // Some HEOS firmware requires audio/flac or application/ogg with DLNA parameters
-    return `http-get:*:audio/flac:${dlnaParams}`;
+    // For Ogg-encapsulated FLAC or native FLAC, declare DLNA.ORG_PN=FLAC and audio/flac:
+    return `http-get:*:audio/flac:DLNA.ORG_PN=FLAC;${dlnaParams}`;
   }
   if (streamUrl.includes('.aac')) {
-    return `http-get:*:audio/aac:${dlnaParams}`;
+    return `http-get:*:audio/aac:DLNA.ORG_PN=AAC_ISO;${dlnaParams}`;
   }
-  return `http-get:*:audio/mpeg:${dlnaParams}`;
+  return `http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;${dlnaParams}`;
 }
 
 export async function setTransportUri(device: UpnpDevice, streamUrl: string, meta: DlnaMeta): Promise<void> {
@@ -111,11 +111,11 @@ export async function setTransportUri(device: UpnpDevice, streamUrl: string, met
 
   const didl =
     `<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">` +
-    `<item id="0" parentID="-1" restricted="1">` +
+    `<item id="1" parentID="0" restricted="1">` +
     `<dc:title>${title}</dc:title>` +
     `<dc:creator>${artist}</dc:creator>` +
     `<upnp:album>${album}</upnp:album>` +
-    `<upnp:class>object.item.audioItem.musicTrack</upnp:class>` +
+    `<upnp:class>object.item.audioItem.audioBroadcast</upnp:class>` +
     `<res protocolInfo="${protocolInfo}">${escapedUrl}</res>` +
     `</item>` +
     `</DIDL-Lite>`;
