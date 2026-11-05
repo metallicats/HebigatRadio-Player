@@ -93,8 +93,11 @@ export function getProtocolInfo(streamUrl: string): string {
   const dlnaParams = 'DLNA.ORG_OP=00;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01A00000000000000000000000000000';
 
   if (streamUrl.includes('.flac') || streamUrl.includes('.ogg')) {
-    // For Ogg-encapsulated FLAC or native FLAC, declare DLNA.ORG_PN=FLAC and audio/flac:
-    return `http-get:*:audio/flac:DLNA.ORG_PN=FLAC;${dlnaParams}`;
+    // SUB/WAVE's /stream.flac is Ogg-encapsulated FLAC (starts with "OggS") and is
+    // served as Content-Type: application/ogg. Advertise exactly that. There is no
+    // DLNA.ORG_PN profile for Ogg, so it is omitted: a wrong PN (e.g. FLAC) makes
+    // strict renderers reject the item before they even open the socket.
+    return `http-get:*:application/ogg:${dlnaParams}`;
   }
   if (streamUrl.includes('.aac')) {
     return `http-get:*:audio/aac:DLNA.ORG_PN=AAC_ISO;${dlnaParams}`;
