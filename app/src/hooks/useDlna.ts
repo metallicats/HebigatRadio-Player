@@ -167,6 +167,33 @@ export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta, s
   // Don't leave the relay (and its notification) running if the player goes away.
   useEffect(() => () => stopFlacRelay(), []);
 
+  // Ensure local playback never runs simultaneously while a DLNA renderer is
+  // active (e.g. if an in-flight local load finished after connectDevice or a
+  // lock-screen/headset remote Play triggered localPlayer).
+  useEffect(() => {
+    if (!activeDevice || !local.tunedIn) return;
+    local.stop();
+    if (!dlnaTunedIn) {
+      setDlnaTunedIn(true);
+      castTo(activeDevice).catch(() => {
+        stopFlacRelay();
+        setDlnaTunedIn(false);
+      });
+    }
+  }, [activeDevice, local, dlnaTunedIn, castTo]);
+
+  // Retune the DLNA renderer if the user switches format while already casting.
+  const prevFormatRef = useRef(streamFormat);
+  useEffect(() => {
+    if (prevFormatRef.current === streamFormat) return;
+    prevFormatRef.current = streamFormat;
+    if (!activeDevice || !dlnaTunedIn) return;
+    castTo(activeDevice).catch(() => {
+      stopFlacRelay();
+      setDlnaTunedIn(false);
+    });
+  }, [streamFormat, activeDevice, dlnaTunedIn, castTo]);
+
   const setDlnaVol = useCallback(
     (v: number) => {
       setVolume(v);

@@ -184,7 +184,7 @@ export function usePlayer(
   );
 
   // iOS: an oldDeviceUnavailable route change (Bluetooth speaker off, CarPlay
-  // disconnected, headphones unplugged) is a tune-out (#992) — the
+  // disconnected, headphones unplugged) is a tune-out (#992) â€” the
   // longFormAudio session policy keeps AVPlayer "playing" to the vanished
   // route, holding the Icecast socket open as a phantom listener. Every other
   // reason must keep playing: newDeviceAvailable / override /
@@ -206,7 +206,7 @@ export function usePlayer(
     return () => sub?.remove();
   }, []);
 
-  // Keyed on the false → true transition so a steady-state `true` never fires
+  // Keyed on the false â†’ true transition so a steady-state `true` never fires
   // it. The watchdog still covers stream-side deaths where the link held.
   const prevConnectedRef = useRef(isConnected);
   useEffect(() => {
@@ -219,6 +219,7 @@ export function usePlayer(
 
   const stop = useCallback(() => {
     recoveryRef.current?.tuneOut();
+    tunedInRef.current = false;
     setTunedIn(false);
     setStatus('idle');
     teardown().catch(() => {});

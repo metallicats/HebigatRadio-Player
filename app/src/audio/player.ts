@@ -12,7 +12,7 @@ const STREAM_TRACK_ID = 'subwave-live';
 
 let setupPromise: Promise<void> | null = null;
 
-/** Idempotent player setup — safe to call from every mount. */
+/** Idempotent player setup â€” safe to call from every mount. */
 export function setupPlayer(): Promise<void> {
   if (setupPromise) return setupPromise;
   setupPromise = (async () => {
@@ -57,7 +57,7 @@ export interface LiveTrackMeta {
   artist?: string;
   album?: string;
   artwork?: string;
-  // Carries `Authorization: Basic …` for a station with basic auth. RNTP maps
+  // Carries `Authorization: Basic â€¦` for a station with basic auth. RNTP maps
   // these onto AVURLAsset and the Android DataSource; it is the only auth path
   // AVPlayer honours, since it ignores URL userinfo (#764).
   headers?: Record<string, string>;
@@ -65,6 +65,7 @@ export interface LiveTrackMeta {
 
 // Module state lets the headless RemotePlay handler reload at the live edge.
 let lastLiveMeta: LiveTrackMeta | null = null;
+let loadGeneration = 0;
 
 export function getLastLiveMeta(): LiveTrackMeta | null {
   return lastLiveMeta;
@@ -73,7 +74,9 @@ export function getLastLiveMeta(): LiveTrackMeta | null {
 /** The cache-buster discards stale buffered audio. Use load() to preserve
  *  the iOS AirPlay route; reset()+add() deactivates the audio session. */
 export async function loadAndPlay(meta: LiveTrackMeta): Promise<void> {
+  const gen = ++loadGeneration;
   await setupPlayer();
+  if (gen !== loadGeneration) return;
   const bust = `${meta.url}${meta.url.includes('?') ? '&' : '?'}t=${Date.now()}`;
   await TrackPlayer.load({
     id: STREAM_TRACK_ID,
@@ -85,11 +88,16 @@ export async function loadAndPlay(meta: LiveTrackMeta): Promise<void> {
     isLiveStream: true,
     headers: meta.headers,
   });
+  if (gen !== loadGeneration) {
+    await TrackPlayer.reset().catch(() => {});
+    return;
+  }
   lastLiveMeta = meta;
   await TrackPlayer.play();
 }
 
 export async function teardown(): Promise<void> {
+  loadGeneration++;
   lastLiveMeta = null;
   try {
     await TrackPlayer.reset();
