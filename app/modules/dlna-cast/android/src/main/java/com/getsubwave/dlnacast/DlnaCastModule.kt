@@ -7,6 +7,7 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.*
 import java.net.DatagramPacket
 import java.net.DatagramSocket
+import java.net.Inet4Address
 import java.net.InetAddress
 
 class DlnaCastModule : Module() {
@@ -24,6 +25,38 @@ class DlnaCastModule : Module() {
         Function("stopDiscovery") {
             stopSsdpDiscovery()
         }
+
+        // Start the on-phone Ogg-FLAC -> native FLAC relay. Returns the URL the
+        // renderer should be given (http://<phone-wifi-ip>:<port>/subwave-live.flac).
+        AsyncFunction("startRelay") { upstreamUrl: String, headers: Map<String, String>, rendererHost: String ->
+            val context = appContext.reactContext?.applicationContext
+                ?: throw IllegalStateException("No Android context")
+            val ip = localIpv4Toward(rendererHost)
+                ?: throw IllegalStateException("Could not find this phone's Wi-Fi address")
+            val port = RelayServer.start(context, upstreamUrl, headers)
+            runCatching { RelayForegroundService.start(context) }
+            "http://$ip:$port/subwave-live.flac"
+        }
+
+        Function("stopRelay") {
+            RelayServer.stop()
+            val context = appContext.reactContext?.applicationContext
+            if (context != null) {
+                runCatching { RelayForegroundService.stop(context) }
+            }
+            Unit
+        }
+    }
+
+    /** The phone's IPv4 address on the interface that routes to the renderer. */
+    private fun localIpv4Toward(host: String): String? = try {
+        DatagramSocket().use { s ->
+            s.connect(InetAddress.getByName(host), 1900)
+            val addr = s.localAddress
+            if (addr is Inet4Address && !addr.isAnyLocalAddress) addr.hostAddress else null
+        }
+    } catch (_: Exception) {
+        null
     }
 
     private fun startSsdpDiscovery() {

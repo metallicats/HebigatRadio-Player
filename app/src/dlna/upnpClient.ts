@@ -85,40 +85,41 @@ export interface DlnaMeta {
   album?: string;
 }
 
-export function getProtocolInfo(streamUrl: string): string {
-  // Denon AVR-X2800H (HEOS) live online radio stream requirements:
-  // DLNA.ORG_OP=00 (live stream, unseekable)
-  // DLNA.ORG_CI=0 (native format)
-  // DLNA.ORG_FLAGS=01A00000000000000000000000000000 (streaming transfer mode, unseekable live stream)
-  const dlnaParams = 'DLNA.ORG_OP=00;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01A00000000000000000000000000000';
+/** DLNA content features for an unseekable live stream. Keep in sync with
+ *  LIVE_DLNA_FEATURES in modules/dlna-cast/.../RelayServer.kt. */
+export const LIVE_DLNA_FEATURES =
+  'DLNA.ORG_OP=00;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000000000000000000000000000';
 
-  if (streamUrl.includes('.flac') || streamUrl.includes('.ogg')) {
-    // SUB/WAVE's /stream.flac is Ogg-encapsulated FLAC (starts with "OggS") and is
-    // served as Content-Type: application/ogg. Advertise exactly that. There is no
-    // DLNA.ORG_PN profile for Ogg, so it is omitted: a wrong PN (e.g. FLAC) makes
-    // strict renderers reject the item before they even open the socket.
-    return `http-get:*:application/ogg:${dlnaParams}`;
-  }
-  if (streamUrl.includes('.aac')) {
-    return `http-get:*:audio/aac:DLNA.ORG_PN=AAC_ISO;${dlnaParams}`;
-  }
-  return `http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;${dlnaParams}`;
+export function getProtocolInfo(mimeType: string): string {
+  // MP3 straight from Icecast already plays on the Denon with the plain
+  // wildcard form; keep it exactly as it was.
+  if (mimeType === 'audio/mpeg') return 'http-get:*:audio/mpeg:*';
+  // Everything else (notably native FLAC from the on-phone relay) is
+  // declared as a live, unseekable stream.
+  return `http-get:*:${mimeType}:${LIVE_DLNA_FEATURES}`;
 }
 
-export async function setTransportUri(device: UpnpDevice, streamUrl: string, meta: DlnaMeta): Promise<void> {
+export async function setTransportUri(
+  device: UpnpDevice,
+  streamUrl: string,
+  meta: DlnaMeta,
+  mimeType = 'audio/mpeg',
+): Promise<void> {
   const title = escapeXml(meta.title || 'SUB/WAVE');
   const artist = escapeXml(meta.artist || 'Live Broadcast');
   const album = escapeXml(meta.album || 'SUB/WAVE');
   const escapedUrl = escapeXml(streamUrl);
-  const protocolInfo = getProtocolInfo(streamUrl);
+  const protocolInfo = getProtocolInfo(mimeType);
 
+  // musicTrack (not audioBroadcast): it is what the Denon accepted for the
+  // live MP3 stream, and some HEOS firmware ignores audioBroadcast items.
   const didl =
     `<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">` +
-    `<item id="1" parentID="0" restricted="1">` +
+    `<item id="0" parentID="-1" restricted="1">` +
     `<dc:title>${title}</dc:title>` +
     `<dc:creator>${artist}</dc:creator>` +
     `<upnp:album>${album}</upnp:album>` +
-    `<upnp:class>object.item.audioItem.audioBroadcast</upnp:class>` +
+    `<upnp:class>object.item.audioItem.musicTrack</upnp:class>` +
     `<res protocolInfo="${protocolInfo}">${escapedUrl}</res>` +
     `</item>` +
     `</DIDL-Lite>`;

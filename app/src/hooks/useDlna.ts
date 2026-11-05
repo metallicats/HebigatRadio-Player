@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { addDlnaDeviceListener, startDlnaDiscovery, stopDlnaDiscovery } from '../../modules/dlna-cast';
+import {
+  addDlnaDeviceListener,
+  startDlnaDiscovery,
+  startFlacRelay,
+  stopDlnaDiscovery,
+  stopFlacRelay,
+} from '../../modules/dlna-cast';
 import {
   fetchDeviceDescription,
   getDlnaVolume,
@@ -15,6 +21,12 @@ import type { StationApi } from '@/lib/api';
 export interface DlnaMeta {
   stationName?: string;
   djName?: string;
+}
+
+/** Host part of an http(s) URL, without relying on a full URL polyfill. */
+function hostOf(url: string): string {
+  const m = /^https?:\/\/\[?([^\]/:]+)/i.exec(url);
+  return m ? m[1] : '';
 }
 
 export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta, streamFormat?: import('@/lib/streamFormat').StreamFormat) {
@@ -69,6 +81,33 @@ export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta, s
     };
   }, []);
 
+  /** Point `device` at the station in the selected format and start it.
+   *  FLAC goes through the on-phone relay: the station serves Ogg-FLAC, which
+   *  the Denon cannot open, and the relay re-serves it as native FLAC. */
+  const castTo = useCallback(async (device: UpnpDevice) => {
+    const api = apiRef.current;
+    if (!api) throw new Error('No station');
+    const format = streamFormatRef.current ?? 'mp3';
+    const upstream = api.streamUrl(format);
+    let url = upstream;
+    let mime = 'audio/mpeg';
+    if (format === 'flac') {
+      url = await startFlacRelay(upstream, api.streamHeaders() ?? {}, hostOf(device.avTransportControlUrl));
+      mime = 'audio/flac';
+    } else {
+      stopFlacRelay();
+      if (format === 'aac') mime = 'audio/aac';
+      else if (format === 'opus') mime = 'audio/ogg';
+    }
+    await setTransportUri(
+      device,
+      url,
+      { title: metaRef.current.stationName, artist: metaRef.current.djName },
+      mime,
+    );
+    await playDlna(device);
+  }, []);
+
   const connectDevice = useCallback(
     async (device: UpnpDevice) => {
       setActiveDevice(device);
@@ -79,23 +118,21 @@ export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta, s
         localRef.current.stop();
         setDlnaTunedIn(true);
         try {
-          await setTransportUri(device, apiRef.current.streamUrl(streamFormatRef.current), {
-            title: metaRef.current.stationName,
-            artist: metaRef.current.djName,
-          });
-          await playDlna(device);
+          await castTo(device);
         } catch {
+          stopFlacRelay();
           setDlnaTunedIn(false);
         }
       }
     },
-    [],
+    [castTo],
   );
 
   const disconnect = useCallback(() => {
     if (activeDevice && dlnaTunedIn) {
       stopDlna(activeDevice).catch(() => {});
     }
+    stopFlacRelay();
     const wasTuned = dlnaTunedIn;
     setActiveDevice(null);
     setDlnaTunedIn(false);
@@ -108,25 +145,27 @@ export function useDlna(api: StationApi | null, local: Player, meta: DlnaMeta, s
     if (!activeDevice || !apiRef.current) return;
     if (dlnaTunedIn) {
       await stopDlna(activeDevice).catch(() => {});
+      stopFlacRelay();
       setDlnaTunedIn(false);
       return;
     }
     setDlnaTunedIn(true);
     try {
-      await setTransportUri(activeDevice, apiRef.current.streamUrl(streamFormatRef.current), {
-        title: metaRef.current.stationName,
-        artist: metaRef.current.djName,
-      });
-      await playDlna(activeDevice);
+      await castTo(activeDevice);
     } catch {
+      stopFlacRelay();
       setDlnaTunedIn(false);
     }
-  }, [activeDevice, dlnaTunedIn]);
+  }, [activeDevice, dlnaTunedIn, castTo]);
 
   const stop = useCallback(() => {
     if (activeDevice) stopDlna(activeDevice).catch(() => {});
+    stopFlacRelay();
     setDlnaTunedIn(false);
   }, [activeDevice]);
+
+  // Don't leave the relay (and its notification) running if the player goes away.
+  useEffect(() => () => stopFlacRelay(), []);
 
   const setDlnaVol = useCallback(
     (v: number) => {
