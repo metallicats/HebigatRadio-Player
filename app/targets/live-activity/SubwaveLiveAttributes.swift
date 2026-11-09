@@ -18,7 +18,7 @@ import Foundation
 /// App Group shared by the app and this extension. Cover art travels through
 /// its container because a Live Activity content state is capped at 4KB —
 /// nowhere near a JPEG — so the state carries a filename instead.
-let subwaveAppGroup = "group.com.getsubwave.app"
+let subwaveAppGroup = "group.com.didaskitchen.hebigatradio"
 
 struct SubwaveLiveAttributes: ActivityAttributes {
   public struct ContentState: Codable, Hashable {

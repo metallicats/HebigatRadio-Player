@@ -9,16 +9,16 @@ module.exports = () => ({
   type: 'widget',
   // Xcode target name. Must equal the sanitized product name: eas-cli resolves
   // credentials as "SUBWAVELive" but the EAS worker looks targets up by this
-  // literal name, so "SUB/WAVE Live" failed every cloud build. The user-facing
+  // literal name, so "Hebigat Radio Live" failed every cloud build. The user-facing
   // label is displayName.
   name: 'SUBWAVELive',
-  displayName: 'SUB/WAVE Live',
+  displayName: 'Hebigat Radio Live',
   deploymentTarget: '17.0',
   // Same group as the app: cover art exceeds the 4KB content-state budget, so
   // the app writes the JPEG into the shared container and the state carries
   // only its filename.
   entitlements: {
-    'com.apple.security.application-groups': ['group.com.getsubwave.app'],
+    'com.apple.security.application-groups': ['group.com.didaskitchen.hebigatradio'],
   },
   frameworks: ['SwiftUI', 'WidgetKit', 'ActivityKit', 'AppIntents'],
 });

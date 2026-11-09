@@ -1,4 +1,4 @@
-package com.getsubwave.dlnacast
+package com.didaskitchen.hebigatradio.dlnacast
 
 import android.util.Log
 import java.io.BufferedInputStream
@@ -231,7 +231,7 @@ internal class FlacRemuxer(
         p.size >= 2 && p[0] == 0xFF.toByte() && (p[1].toInt() and 0xFE) == 0xF8
 
     private companion object {
-        const val TAG = "SubwaveRelay"
+        const val TAG = "HebigatRelay"
         const val OGGS = 0x4F676753 // "OggS"
         const val MAX_PACKET = 4 * 1024 * 1024
 

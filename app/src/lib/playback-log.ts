@@ -208,7 +208,7 @@ export interface PlaybackLogSource {
 export function playbackLogReport(source: PlaybackLogSource, lines: readonly string[]): string {
   const bundle = source.bundle ? ` (${source.bundle})` : '';
   return [
-    `SUB/WAVE app ${source.version}${bundle} · ${source.platform} ${source.osVersion}`,
+    `Hebigat Radio app ${source.version}${bundle} · ${source.platform} ${source.osVersion}`,
     `Playback log: ${lines.length} line${lines.length === 1 ? '' : 's'}, oldest first, times in UTC.`,
     '',
     ...lines,

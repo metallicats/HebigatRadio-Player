@@ -40,14 +40,22 @@ export interface StationStore {
   recents: StationRef[];
 }
 
-const EMPTY: StationStore = { activeStation: null, recents: [] };
+export const DEFAULT_STATION: StationRef = {
+  url: 'https://radio.didaskitchen.com',
+  name: 'Hebigat Radio',
+};
+
+const EMPTY: StationStore = {
+  activeStation: DEFAULT_STATION.url,
+  recents: [DEFAULT_STATION],
+};
 
 export function featuredStation(): StationRef {
   const f = (Constants.expoConfig?.extra as { featuredStation?: StationRef } | undefined)
     ?.featuredStation;
   return {
-    url: splitStationAddress(f?.url || 'https://www.getsubwave.com').base,
-    name: f?.name || 'SUB/WAVE',
+    url: splitStationAddress(f?.url || DEFAULT_STATION.url).base,
+    name: f?.name || DEFAULT_STATION.name,
   };
 }
 
@@ -57,9 +65,13 @@ export async function loadStations(): Promise<StationStore> {
     const raw = await AsyncStorage.getItem(KEY);
     if (!raw) return { ...EMPTY };
     const parsed = JSON.parse(raw) as Partial<StationStore>;
+    const recents =
+      Array.isArray(parsed.recents) && parsed.recents.length > 0
+        ? parsed.recents
+        : [DEFAULT_STATION];
     loaded = {
-      activeStation: parsed.activeStation ?? null,
-      recents: Array.isArray(parsed.recents) ? parsed.recents : [],
+      activeStation: parsed.activeStation ?? DEFAULT_STATION.url,
+      recents,
     };
   } catch {
     return { ...EMPTY };

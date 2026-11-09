@@ -34,11 +34,11 @@ export function resolveAirCard(params: {
   const showingPersona = talking && !!avatarUrl;
 
   return {
-    title: nowPlaying?.title || 'SUB/WAVE',
+    title: nowPlaying?.title || 'Hebigat Radio',
     artist: showingPersona
       ? personaName || nowPlaying?.artist || 'Live broadcast'
       : nowPlaying?.artist || 'Live broadcast',
-    album: nowPlaying?.album || 'SUB/WAVE',
+    album: nowPlaying?.album || 'Hebigat Radio',
     artworkUrl: showingPersona ? avatarUrl : coverUrl,
     artworkKey: showingPersona ? personaAvatar : nowPlaying?.subsonic_id ?? null,
     show: activeShow?.name ?? null,

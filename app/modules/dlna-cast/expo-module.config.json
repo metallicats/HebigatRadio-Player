@@ -2,6 +2,6 @@
   "name": "dlna-cast",
   "platforms": ["android"],
   "android": {
-    "modules": ["com.getsubwave.dlnacast.DlnaCastModule"]
+    "modules": ["com.didaskitchen.hebigatradio.dlnacast.DlnaCastModule"]
   }
 }

@@ -12,6 +12,7 @@ import { createApi, type StationApi } from '@/lib/api';
 import {
   clearActiveStation,
   clearStationPassword,
+  DEFAULT_STATION,
   featuredStation,
   loadStationCredentials,
   loadStationPassword,
@@ -69,7 +70,10 @@ interface StationContextValue {
 const Ctx = createContext<StationContextValue | null>(null);
 
 export function StationProvider({ children }: { children: React.ReactNode }) {
-  const [store, setStore] = useState<StationStore>({ activeStation: null, recents: [] });
+  const [store, setStore] = useState<StationStore>({
+    activeStation: DEFAULT_STATION.url,
+    recents: [DEFAULT_STATION],
+  });
   const [credentials, setCredentials] = useState<StationCredentials | null>(null);
   // State for consumers; the ref for the API client, which reads it at call
   // time so a newly unlocked station reaches the very next tune.
@@ -189,7 +193,10 @@ export function StationProvider({ children }: { children: React.ReactNode }) {
   );
   const name = useMemo(() => {
     if (!base) return null;
-    return store.recents.find((r) => r.url === base)?.name ?? null;
+    return (
+      store.recents.find((r) => r.url === base)?.name ??
+      (base === DEFAULT_STATION.url ? DEFAULT_STATION.name : null)
+    );
   }, [base, store.recents]);
 
   const value = useMemo<StationContextValue>(

@@ -25,7 +25,7 @@ export async function loadLiveStream(
       streamType: MediaStreamType.LIVE,
       metadata: {
         type: 'musicTrack',
-        title: meta.stationName || 'SUB/WAVE',
+        title: meta.stationName || 'Hebigat Radio',
         artist: meta.djName ? `${meta.djName} · live broadcast` : 'Live broadcast',
         images: meta.artworkUrl ? [{ url: meta.artworkUrl }] : undefined,
       },

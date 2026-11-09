@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.getsubwave.dlnacast"
+    namespace "com.didaskitchen.hebigatradio.dlnacast"
     compileSdkVersion 36
 
     defaultConfig {

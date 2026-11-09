@@ -6,9 +6,11 @@
 import { Linking } from 'react-native';
 
 export const PROJECT_LINKS = {
+  station: 'https://radio.didaskitchen.com',
   setup: 'https://www.getsubwave.com/setup',
-  about: 'https://www.getsubwave.com/landing',
-  source: 'https://github.com/perminder-klair/subwave',
+  about: 'https://radio.didaskitchen.com',
+  source: 'https://github.com/metallicats/HebigatRadio-Player',
+  upstream: 'https://github.com/perminder-klair/subwave',
   community: 'https://discord.gg/vjVbVKnMBa',
 } as const;
 

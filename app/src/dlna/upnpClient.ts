@@ -105,9 +105,9 @@ export async function setTransportUri(
   meta: DlnaMeta,
   mimeType = 'audio/mpeg',
 ): Promise<void> {
-  const title = escapeXml(meta.title || 'SUB/WAVE');
+  const title = escapeXml(meta.title || 'Hebigat Radio');
   const artist = escapeXml(meta.artist || 'Live Broadcast');
-  const album = escapeXml(meta.album || 'SUB/WAVE');
+  const album = escapeXml(meta.album || 'Hebigat Radio');
   const escapedUrl = escapeXml(streamUrl);
   const protocolInfo = getProtocolInfo(mimeType);
 

@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "SUB/WAVE",
+    "name": "Hebigat Radio",
     "slug": "subwave",
-    "scheme": "subwave",
+    "scheme": "hebigatradio",
     "version": "1.6.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,17 +17,17 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.metallicats.subwave.app",
+      "bundleIdentifier": "com.didaskitchen.hebigatradio",
       "appleTeamId": "BU9RD766GN",
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.com.getsubwave.app"
+          "group.com.didaskitchen.hebigatradio"
         ]
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
-        "NSLocalNetworkUsageDescription": "SUB/WAVE uses the local network to find Google Cast speakers and TVs on your Wi-Fi so you can send the station to them.",
+        "NSLocalNetworkUsageDescription": "Hebigat Radio uses the local network to find Google Cast and DLNA speakers and receivers on your Wi-Fi so you can send the station to them.",
         "UIBackgroundModes": [
           "audio"
         ],
@@ -38,9 +38,9 @@
       }
     },
     "android": {
-      "package": "com.metallicats.subwave.app",
+      "package": "com.didaskitchen.hebigatradio",
       "adaptiveIcon": {
-        "backgroundColor": "#100e0c",
+        "backgroundColor": "#0b101b",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -75,7 +75,7 @@
         {
           "image": "./assets/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#100e0c"
+          "backgroundColor": "#0b101b"
         }
       ],
       [
@@ -114,10 +114,10 @@
     },
     "extra": {
       "featuredStation": {
-        "url": "https://www.getsubwave.com",
-        "name": "SUB/WAVE"
+        "url": "https://radio.didaskitchen.com",
+        "name": "Hebigat Radio"
       },
-      "directoryUrl": "https://www.getsubwave.com",
+      "directoryUrl": "https://radio.didaskitchen.com",
       "router": {},
       "eas": {
         "build": {
@@ -125,20 +125,11 @@
             "ios": {
               "appExtensions": [
                 {
-                  "bundleIdentifier": "com.metallicats.subwave.app.widget",
+                  "bundleIdentifier": "com.didaskitchen.hebigatradio.widget",
                   "targetName": "SUBWAVELive",
                   "entitlements": {
                     "com.apple.security.application-groups": [
-                      "group.com.getsubwave.app"
-                    ]
-                  }
-                },
-                {
-                  "bundleIdentifier": "com.metallicats.subwave.app.widget",
-                  "targetName": "SUBWAVELive",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.getsubwave.app"
+                      "group.com.didaskitchen.hebigatradio"
                     ]
                   }
                 }

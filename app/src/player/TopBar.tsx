@@ -49,7 +49,7 @@ export default function TopBar({
         >
           <DiscMark size={18} spinning={tunedIn} />
           <Text className="font-mono text-ink" style={{ fontSize: 12, letterSpacing: 2 }} numberOfLines={1}>
-            {(stationName?.trim() || 'SUB/WAVE').toUpperCase()}
+            {(stationName?.trim() || 'Hebigat Radio').toUpperCase()}
           </Text>
           <Text className="font-mono text-muted" style={{ fontSize: 12 }}>⌄</Text>
           {showName ? (

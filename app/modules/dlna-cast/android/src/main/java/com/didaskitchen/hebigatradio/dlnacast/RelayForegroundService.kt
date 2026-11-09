@@ -1,4 +1,4 @@
-package com.getsubwave.dlnacast
+package com.didaskitchen.hebigatradio.dlnacast
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -49,7 +49,7 @@ class RelayForegroundService : Service() {
             builder.setContentIntent(pi)
         }
         return builder
-            .setContentTitle("SUB/WAVE")
+            .setContentTitle("Hebigat Radio")
             .setContentText("Casting lossless FLAC to your speaker")
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setOngoing(true)
@@ -57,7 +57,7 @@ class RelayForegroundService : Service() {
     }
 
     companion object {
-        private const val CHANNEL_ID = "subwave-dlna-relay"
+        private const val CHANNEL_ID = "hebigatradio-dlna-relay"
         private const val NOTIFICATION_ID = 0x5B3A
 
         fun start(context: Context) {

@@ -1,24 +1,44 @@
-// Listeners who like the radio are the people most likely to want their own,
-// so this is the app's one pointer at running a station. Links go out through
-// lib/links, which is also why nothing here asks for money. It is also where a
-// listener asked for a playback log finds one to share (#2140): the share
-// sheet offers Copy on iOS and on Android 10+, and older Android hands it to a
-// mail or notes app, so the app needs no clipboard module.
-
 import Constants from 'expo-constants';
+import { Image } from 'expo-image';
 import * as Updates from 'expo-updates';
-import { ArrowUpRight, BookOpen, ClipboardList, Code, MessagesSquare, Newspaper, Share2 } from 'lucide-react-native';
-import type { ReactNode } from 'react';
+import {
+  ArrowUpRight,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
+  Code,
+  FileText,
+  Radio,
+  Share2,
+} from 'lucide-react-native';
+import { useState, type ReactNode } from 'react';
 import { Platform, Pressable, Share, Text, View } from 'react-native';
 import { PROJECT_LINKS, openExternal } from '@/lib/links';
 import { playbackLog, playbackLogReport, type PlaybackLogSource } from '@/lib/playback-log';
 import { useTheme } from '@/theme/ThemeContext';
 
-const STEPS = [
-  { title: 'A machine that stays on', sub: 'A home server, NAS or small cloud box running Docker.' },
-  { title: 'Your music library', sub: 'Navidrome, or any Subsonic-compatible server.' },
-  { title: 'A language model', sub: 'A local Ollama box, or a key for a hosted provider.' },
-  { title: 'Tune in here', sub: "Once it's on the air, add its address under Stations." },
+const BANNER_IMAGE = require('../../../assets/hebigat-banner.jpg');
+
+const MIT_LICENSE_TEXT = `MIT License
+
+Copyright (c) 2026 Parminder Klair (SUB/WAVE original project)
+Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)
+Modifications & DLNA Lossless FLAC Relay Copyright (c) 2026 Hebigat Radio / Dida's Kitchen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.`;
+
+const OPEN_SOURCE_CREDITS = [
+  { name: 'SUB/WAVE', license: 'MIT', desc: 'Original open-source internet radio station & mobile client architecture by Parminder Klair' },
+  { name: 'Expo & React Native', license: 'MIT', desc: 'Cross-platform native mobile runtime, navigation, and device APIs' },
+  { name: 'React Native Track Player', license: 'Apache-2.0', desc: 'Background media session, lock-screen controls, and ExoPlayer audio engine' },
+  { name: 'react-native-google-cast', license: 'MIT', desc: 'Google Cast / Chromecast discovery and remote media session control' },
+  { name: 'React Native Skia & Reanimated', license: 'MIT', desc: '60fps GPU-accelerated animations and graphics' },
+  { name: 'NativeWind & Tailwind CSS', license: 'MIT', desc: 'Utility-first styling for React Native' },
+  { name: 'Lucide Icons', license: 'ISC', desc: 'Vector iconography' },
 ] as const;
 
 const stripProto = (u: string) => u.replace(/^https?:\/\//, '');
@@ -40,67 +60,65 @@ function appSource(): PlaybackLogSource {
 
 function sharePlaybackLog() {
   Share.share(
-    { title: 'SUB/WAVE playback log', message: playbackLogReport(appSource(), playbackLog.lines()) },
-    { dialogTitle: 'Share playback log', subject: 'SUB/WAVE playback log' },
+    { title: 'Hebigat Radio playback log', message: playbackLogReport(appSource(), playbackLog.lines()) },
+    { dialogTitle: 'Share playback log', subject: 'Hebigat Radio playback log' },
   ).catch(() => {});
 }
 
 export interface AboutDrawerProps {
   onAddStation: () => void;
+  initialShowLicenses?: boolean;
 }
 
-export default function AboutDrawer({ onAddStation }: AboutDrawerProps) {
+export default function AboutDrawer({ onAddStation, initialShowLicenses = false }: AboutDrawerProps) {
   const { colors } = useTheme();
+  const [showLicenses, setShowLicenses] = useState(initialShowLicenses);
 
   return (
     <View>
-      <Text className="font-body text-muted" style={{ fontSize: 13, lineHeight: 21 }}>
-        SUB/WAVE is free, open-source software for running your own internet radio
-        station. One live stream, so every listener hears the same broadcast, with an AI DJ
-        that picks songs from the station&apos;s own library and talks between them. This app
-        tunes in to any SUB/WAVE station.
-      </Text>
-
-      <View style={{ height: 18 }} />
-      <SectionLabel text="RUN YOUR OWN" />
-      <View style={{ marginTop: 4 }}>
-        {STEPS.map((step, i) => (
-          <View
-            key={step.title}
-            className="flex-row"
-            style={{ gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.softBorder }}
-          >
-            <Text className="font-mono text-accent" style={{ fontSize: 11, fontWeight: '700', marginTop: 2 }}>
-              {String(i + 1).padStart(2, '0')}
-            </Text>
-            <View className="flex-1">
-              <Text className="font-body-semibold text-ink" style={{ fontSize: 14 }}>
-                {step.title}
-              </Text>
-              <Text className="font-body text-muted" style={{ fontSize: 12.5, lineHeight: 18, marginTop: 2 }}>
-                {step.sub}
-              </Text>
-            </View>
-          </View>
-        ))}
+      <View
+        style={{
+          borderWidth: 1,
+          borderColor: colors.softBorder,
+          overflow: 'hidden',
+          marginBottom: 14,
+          backgroundColor: '#0b101b',
+        }}
+      >
+        <Image
+          source={BANNER_IMAGE}
+          style={{ width: '100%', aspectRatio: 16 / 9 }}
+          contentFit="cover"
+          accessibilityLabel="Hebigat Radio — The Philippines' First & Only Lossless Stream"
+        />
       </View>
 
+      <Text className="font-body text-ink" style={{ fontSize: 14, fontWeight: '600', lineHeight: 20 }}>
+        The Philippines&apos; First &amp; Only Lossless Stream
+      </Text>
+      <Text className="font-body text-muted" style={{ fontSize: 13, lineHeight: 21, marginTop: 6 }}>
+        Hebigat Radio broadcasts 100% lossless Hi-Fi audio — 90s Alternative, Rock, Pop, New Wave,
+        and Dance — live from radio.didaskitchen.com, with gapless bit-perfect FLAC streaming and
+        DLNA/UPnP receiver casting.
+      </Text>
+
       <Pressable
-        onPress={() => openExternal(PROJECT_LINKS.setup)}
+        onPress={() => openExternal(PROJECT_LINKS.station)}
         accessibilityRole="link"
-        accessibilityLabel="Read the setup guide"
+        accessibilityLabel="Visit radio.didaskitchen.com"
         className="flex-row items-center justify-center"
-        style={{ gap: 8, marginTop: 16, backgroundColor: colors.accent, paddingVertical: 14 }}
+        style={{ gap: 8, marginTop: 14, backgroundColor: colors.accent, paddingVertical: 14 }}
       >
-        <BookOpen size={16} color="#fff" />
+        <Radio size={16} color="#fff" />
         <Text className="font-body-semibold" style={{ color: '#fff', fontSize: 14, letterSpacing: 0.3 }}>
-          Read the setup guide
+          Listen live at radio.didaskitchen.com
         </Text>
       </Pressable>
+
       <Pressable
         onPress={onAddStation}
         accessibilityRole="button"
-        accessibilityLabel="Add your station"
+        accessibilityLabel="Switch or add another station"
         className="flex-row items-center justify-center"
         style={{ gap: 8, marginTop: 8, paddingVertical: 13, borderWidth: 1, borderColor: colors.muted, borderStyle: 'dashed' }}
       >
@@ -108,26 +126,104 @@ export default function AboutDrawer({ onAddStation }: AboutDrawerProps) {
           +
         </Text>
         <Text className="font-mono text-ink" style={{ fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: '700' }}>
-          Already running one? Add it
+          Connect to another station
         </Text>
       </Pressable>
 
       <View style={{ height: 18 }} />
-      <SectionLabel text="THE PROJECT" />
+      <SectionLabel text="OPEN SOURCE LICENSES" />
+      <Pressable
+        onPress={() => setShowLicenses((v) => !v)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: showLicenses }}
+        accessibilityLabel="Open Source Licenses and MIT License notice"
+        className="flex-row items-center justify-between"
+        style={{
+          borderWidth: 1,
+          borderColor: showLicenses ? colors.accent : colors.softBorder,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          marginTop: 8,
+        }}
+      >
+        <View className="flex-row items-center" style={{ gap: 10 }}>
+          <FileText size={18} color={showLicenses ? colors.accent : colors.muted} />
+          <View>
+            <Text className="font-body-semibold text-ink" style={{ fontSize: 14 }}>
+              Open Source Licenses
+            </Text>
+            <Text className="font-mono text-muted" style={{ fontSize: 10.5, marginTop: 2 }}>
+              MIT License · Upstream &amp; Third-Party Notices
+            </Text>
+          </View>
+        </View>
+        {showLicenses ? (
+          <ChevronUp size={16} color={colors.accent} />
+        ) : (
+          <ChevronDown size={16} color={colors.muted} />
+        )}
+      </Pressable>
+
+      {showLicenses ? (
+        <View
+          style={{
+            borderWidth: 1,
+            borderTopWidth: 0,
+            borderColor: colors.softBorder,
+            backgroundColor: colors.field,
+            padding: 14,
+            gap: 12,
+          }}
+        >
+          <Text className="font-mono text-ink" style={{ fontSize: 10.5, lineHeight: 16 }}>
+            {MIT_LICENSE_TEXT}
+          </Text>
+
+          <View style={{ height: 1, backgroundColor: colors.softBorder }} />
+          <Text className="font-mono text-muted" style={{ fontSize: 9.5, letterSpacing: 2 }}>
+            THIRD-PARTY SOFTWARE CREDITS
+          </Text>
+          {OPEN_SOURCE_CREDITS.map((item) => (
+            <View
+              key={item.name}
+              style={{
+                borderBottomWidth: 1,
+                borderBottomColor: colors.softBorder,
+                paddingBottom: 8,
+              }}
+            >
+              <View className="flex-row items-center justify-between">
+                <Text className="font-body-semibold text-ink" style={{ fontSize: 13 }}>
+                  {item.name}
+                </Text>
+                <Text className="font-mono text-accent" style={{ fontSize: 10 }}>
+                  {item.license}
+                </Text>
+              </View>
+              <Text className="font-body text-muted" style={{ fontSize: 11.5, lineHeight: 17, marginTop: 2 }}>
+                {item.desc}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      <View style={{ height: 18 }} />
+      <SectionLabel text="LINKS & SOURCE" />
       <LinkRow
-        icon={<Newspaper size={18} color={colors.muted} />}
-        title="How it works"
-        url={PROJECT_LINKS.about}
+        icon={<Radio size={18} color={colors.muted} />}
+        title="Hebigat Radio"
+        url={PROJECT_LINKS.station}
       />
       <LinkRow
         icon={<Code size={18} color={colors.muted} />}
-        title="Source code"
+        title="HebigatRadio Player Source"
         url={PROJECT_LINKS.source}
       />
       <LinkRow
-        icon={<MessagesSquare size={18} color={colors.muted} />}
-        title="Community"
-        url={PROJECT_LINKS.community}
+        icon={<Code size={18} color={colors.muted} />}
+        title="Upstream SUB/WAVE Project"
+        url={PROJECT_LINKS.upstream}
       />
 
       <View style={{ height: 18 }} />

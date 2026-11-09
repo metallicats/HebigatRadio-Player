@@ -1,4 +1,4 @@
-package com.getsubwave.dlnacast
+package com.didaskitchen.hebigatradio.dlnacast
 
 import android.content.Context
 import android.net.wifi.WifiManager
@@ -28,7 +28,7 @@ internal const val LIVE_DLNA_FEATURES =
  * Connection: close (Icecast-style, which this AVR already plays for MP3).
  */
 internal object RelayServer {
-    private const val TAG = "SubwaveRelay"
+    private const val TAG = "HebigatRelay"
 
     @Volatile private var server: ServerSocket? = null
     @Volatile private var upstreamUrl: String = ""
@@ -46,7 +46,7 @@ internal object RelayServer {
         val ss = ServerSocket(0)
         server = ss
         acquireLocks(context)
-        thread(isDaemon = true, name = "subwave-relay-accept") { acceptLoop(ss) }
+        thread(isDaemon = true, name = "hebigat-relay-accept") { acceptLoop(ss) }
         Log.i(TAG, "relay listening on port ${ss.localPort}")
         return ss.localPort
     }
@@ -70,7 +70,7 @@ internal object RelayServer {
                 break
             }
             clients.add(client)
-            thread(isDaemon = true, name = "subwave-relay-client") {
+            thread(isDaemon = true, name = "hebigat-relay-client") {
                 try {
                     handleClient(client)
                 } catch (e: Exception) {
@@ -111,7 +111,7 @@ internal object RelayServer {
             connectTimeout = 10_000
             readTimeout = 30_000
             instanceFollowRedirects = true
-            setRequestProperty("User-Agent", "SUBWAVE-DLNA-Relay/1.0")
+            setRequestProperty("User-Agent", "HebigatRadio-DLNA-Relay/1.0")
             upstreamHeaders.forEach { (k, v) -> setRequestProperty(k, v) }
         }
         try {
@@ -137,7 +137,7 @@ internal object RelayServer {
             "Connection: close\r\n" +
             "transferMode.dlna.org: Streaming\r\n" +
             "contentFeatures.dlna.org: $LIVE_DLNA_FEATURES\r\n" +
-            "Server: Android UPnP/1.0 SUBWAVE/1.0\r\n" +
+            "Server: Android UPnP/1.0 HebigatRadio/1.0\r\n" +
             "\r\n"
         out.write(headers.toByteArray(Charsets.US_ASCII))
     }
@@ -162,14 +162,14 @@ internal object RelayServer {
         val app = context.applicationContext
         if (wifiLock == null) {
             val wm = app.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            wifiLock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "subwave-relay-wifi").apply {
+            wifiLock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "hebigat-relay-wifi").apply {
                 setReferenceCounted(false)
                 acquire()
             }
         }
         if (wakeLock == null) {
             val pm = app.getSystemService(Context.POWER_SERVICE) as PowerManager
-            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "subwave:relay").apply {
+            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "hebigatradio:relay").apply {
                 setReferenceCounted(false)
                 acquire()
             }

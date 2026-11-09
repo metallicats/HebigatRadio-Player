@@ -1,4 +1,4 @@
-﻿// The native scroll driver moves the needle without React renders.
+// The native scroll driver moves the needle without React renders.
 // Memoized pages rely on useStationFeed preserving unchanged payload identities.
 
 import { BlurView } from 'expo-blur';
@@ -90,13 +90,14 @@ const HOME_INDEX = PAGES.findIndex((p) => p.id === 'now');
 const BOOTH_INDEX = PAGES.findIndex((p) => p.id === 'booth');
 const TIMELINE_INDEX = PAGES.findIndex((p) => p.id === 'timeline');
 
-type SheetId = 'panel' | 'sleep' | 'themes' | 'format' | 'about' | 'lyrics' | 'dlna';
+type SheetId = 'panel' | 'sleep' | 'themes' | 'format' | 'about' | 'licenses' | 'lyrics' | 'dlna';
 const SHEET_TITLES: Record<SheetId, string> = {
   panel: 'Back panel',
   sleep: 'Sleep timer',
   themes: 'Theme',
   format: 'Stream format',
-  about: 'About SUB/WAVE',
+  about: 'About Hebigat Radio',
+  licenses: 'Open Source Licenses',
   lyrics: 'Lyrics',
   dlna: 'DLNA / UPnP Speakers',
 };
@@ -339,7 +340,7 @@ export default function PlayerScreen() {
     boothFeed,
     leadMs,
     trackStartedAt,
-    station: stationName || 'SUB/WAVE',
+    station: stationName || 'Hebigat Radio',
     accent: colors.accent,
     like: trackLike,
   });
@@ -645,6 +646,7 @@ export default function PlayerScreen() {
             onOpenThemes={() => setActiveSheet('themes')}
             onOpenFormat={() => setActiveSheet('format')}
             onOpenAbout={() => setActiveSheet('about')}
+            onOpenLicenses={() => setActiveSheet('licenses')}
           />
         ) : null}
         {activeSheet === 'sleep' ? (
@@ -672,7 +674,7 @@ export default function PlayerScreen() {
             fits={lyricsFit}
           />
         ) : null}
-                {activeSheet === 'dlna' ? (
+        {activeSheet === 'dlna' ? (
           <DlnaDrawer
             devices={dlna.devices}
             connected={dlna.connected}
@@ -686,6 +688,15 @@ export default function PlayerScreen() {
         ) : null}
         {activeSheet === 'about' ? (
           <AboutDrawer
+            onAddStation={() => {
+              setActiveSheet(null);
+              router.push('/onboarding');
+            }}
+          />
+        ) : null}
+        {activeSheet === 'licenses' ? (
+          <AboutDrawer
+            initialShowLicenses
             onAddStation={() => {
               setActiveSheet(null);
               router.push('/onboarding');

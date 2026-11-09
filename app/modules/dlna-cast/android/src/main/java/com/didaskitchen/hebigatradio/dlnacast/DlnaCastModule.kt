@@ -1,4 +1,4 @@
-package com.getsubwave.dlnacast
+package com.didaskitchen.hebigatradio.dlnacast
 
 import android.content.Context
 import android.net.wifi.WifiManager
@@ -27,7 +27,7 @@ class DlnaCastModule : Module() {
         }
 
         // Start the on-phone Ogg-FLAC -> native FLAC relay. Returns the URL the
-        // renderer should be given (http://<phone-wifi-ip>:<port>/subwave-live.flac).
+        // renderer should be given (http://<phone-wifi-ip>:<port>/hebigat-live.flac).
         AsyncFunction("startRelay") { upstreamUrl: String, headers: Map<String, String>, rendererHost: String ->
             val context = appContext.reactContext?.applicationContext
                 ?: throw IllegalStateException("No Android context")
@@ -35,7 +35,7 @@ class DlnaCastModule : Module() {
                 ?: throw IllegalStateException("Could not find this phone's Wi-Fi address")
             val port = RelayServer.start(context, upstreamUrl, headers)
             runCatching { RelayForegroundService.start(context) }
-            "http://$ip:$port/subwave-live.flac"
+            "http://$ip:$port/hebigat-live.flac"
         }
 
         Function("stopRelay") {
@@ -64,7 +64,7 @@ class DlnaCastModule : Module() {
 
         val context = appContext.reactContext ?: return
         val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        multicastLock = wifiManager.createMulticastLock("subwave-ssdp-lock").apply {
+        multicastLock = wifiManager.createMulticastLock("hebigatradio-ssdp-lock").apply {
             setReferenceCounted(true)
             acquire()
         }

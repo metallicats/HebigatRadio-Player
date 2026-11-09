@@ -64,7 +64,7 @@ export function useLiveActivity({
 
   const state: LiveActivityState = useMemo(
     () => ({
-      title: card?.title ?? 'SUB/WAVE',
+      title: card?.title ?? 'Hebigat Radio',
       artist: card?.artist ?? 'Live broadcast',
       show: card?.show ?? null,
       artworkKey: card?.artworkKey ?? null,

@@ -8,11 +8,11 @@ import TrackPlayer, {
   RatingType,
 } from 'react-native-track-player';
 
-const STREAM_TRACK_ID = 'subwave-live';
+const STREAM_TRACK_ID = 'hebigatradio-live';
 
 let setupPromise: Promise<void> | null = null;
 
-/** Idempotent player setup â€” safe to call from every mount. */
+/** Idempotent player setup — safe to call from every mount. */
 export function setupPlayer(): Promise<void> {
   if (setupPromise) return setupPromise;
   setupPromise = (async () => {
@@ -57,7 +57,7 @@ export interface LiveTrackMeta {
   artist?: string;
   album?: string;
   artwork?: string;
-  // Carries `Authorization: Basic â€¦` for a station with basic auth. RNTP maps
+  // Carries `Authorization: Basic …` for a station with basic auth. RNTP maps
   // these onto AVURLAsset and the Android DataSource; it is the only auth path
   // AVPlayer honours, since it ignores URL userinfo (#764).
   headers?: Record<string, string>;
@@ -81,9 +81,9 @@ export async function loadAndPlay(meta: LiveTrackMeta): Promise<void> {
   await TrackPlayer.load({
     id: STREAM_TRACK_ID,
     url: bust,
-    title: meta.title || 'SUB/WAVE',
+    title: meta.title || 'Hebigat Radio',
     artist: meta.artist || 'Live broadcast',
-    album: meta.album || 'SUB/WAVE',
+    album: meta.album || 'Hebigat Radio',
     artwork: meta.artwork,
     isLiveStream: true,
     headers: meta.headers,

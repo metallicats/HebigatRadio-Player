@@ -575,7 +575,7 @@ test('the shared text starts with the app version, its bundle, the platform and 
   assert.equal(
     playbackLogReport({ version: '1.6.1', bundle: 'OTA 1a2b3c4d, production', platform: 'iOS', osVersion: '18.2' }, lines),
     [
-      'SUB/WAVE app 1.6.1 (OTA 1a2b3c4d, production) · iOS 18.2',
+      'Hebigat Radio app 1.6.1 (OTA 1a2b3c4d, production) · iOS 18.2',
       'Playback log: 1 line, oldest first, times in UTC.',
       '',
       '2026-10-30T21:04:05.678Z reload [tune] #1 state=none',
@@ -583,6 +583,6 @@ test('the shared text starts with the app version, its bundle, the platform and 
   );
   assert.equal(
     playbackLogReport({ version: '1.6.1', bundle: null, platform: 'Android', osVersion: '15 (API 35)' }, []),
-    'SUB/WAVE app 1.6.1 · Android 15 (API 35)\nPlayback log: 0 lines, oldest first, times in UTC.\n',
+    'Hebigat Radio app 1.6.1 · Android 15 (API 35)\nPlayback log: 0 lines, oldest first, times in UTC.\n',
   );
 });

@@ -1,6 +1,6 @@
 // AirPlay, Cast and DLNA outputs.
 
-import { AudioLines, ChevronRight, Info, MoonStar, Palette, Radio } from 'lucide-react-native';
+import { AudioLines, ChevronRight, FileText, Info, MoonStar, Palette, Radio } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { CastButton } from 'react-native-google-cast';
@@ -25,6 +25,7 @@ export interface BackPanelDrawerProps {
   onOpenThemes: () => void;
   onOpenFormat: () => void;
   onOpenAbout: () => void;
+  onOpenLicenses?: () => void;
 }
 
 export default function BackPanelDrawer({
@@ -41,6 +42,7 @@ export default function BackPanelDrawer({
   onOpenThemes,
   onOpenFormat,
   onOpenAbout,
+  onOpenLicenses,
 }: BackPanelDrawerProps) {
   const { colors } = useTheme();
 
@@ -117,16 +119,24 @@ export default function BackPanelDrawer({
       <SectionLabel text="ABOUT" />
       <PanelRow
         icon={<Info size={18} color={colors.muted} />}
-        title="SUB/WAVE"
-        value="Run your own"
+        title="Hebigat Radio"
+        value="Station & Info"
         onPress={onOpenAbout}
       />
+      {onOpenLicenses ? (
+        <PanelRow
+          icon={<FileText size={18} color={colors.muted} />}
+          title="Open Source Licenses"
+          value="MIT License"
+          onPress={onOpenLicenses}
+        />
+      ) : null}
 
       <Text
         className="font-mono text-muted"
         style={{ fontSize: 8.5, letterSpacing: 2, textAlign: 'center', marginTop: 26, opacity: 0.7 }}
       >
-        MODEL SW-1 · SERIAL ∞ · MADE FOR THE INTERNET
+        HEBIGAT RADIO · 100% LOSSLESS HI-FI · RADIO.DIDASKITCHEN.COM
       </Text>
     </View>
   );

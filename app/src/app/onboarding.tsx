@@ -360,11 +360,11 @@ export default function Onboarding() {
           <View className="flex-row items-center" style={{ gap: 10, marginBottom: 6 }}>
             <DiscMark size={22} />
             <Text className="font-mono text-ink" style={{ fontSize: 18, letterSpacing: 1, fontWeight: '800' }}>
-              SUB/WAVE
+              HEBIGAT RADIO
             </Text>
           </View>
           <Text className="font-mono text-muted" style={{ fontSize: 11, letterSpacing: 2.4, textTransform: 'uppercase', fontWeight: '700' }}>
-            self-hosted internet radio
+            100% lossless hi-fi internet radio
           </Text>
 
           <Text className="font-display text-ink" style={{ fontSize: 29, lineHeight: 31, marginTop: 12 }}>
@@ -374,8 +374,8 @@ export default function Onboarding() {
           {phase === 'entry' ? (
             <>
               <Text className="font-body text-muted" style={{ fontSize: 13, lineHeight: 21, marginTop: 12 }}>
-                Point SUB/WAVE at a station&apos;s URL — your own box, or a friend&apos;s. It&apos;s one
-                stream, one broadcast: you join whatever&apos;s on.
+                Point Hebigat Radio at a station&apos;s URL — radio.didaskitchen.com, your own box,
+                or a friend&apos;s. It&apos;s one stream, one broadcast: you join whatever&apos;s on.
               </Text>
 
               <View
@@ -398,7 +398,7 @@ export default function Onboarding() {
                 <TextInput
                   value={host}
                   onChangeText={setHost}
-                  placeholder="radio.yourhost.com"
+                  placeholder="radio.didaskitchen.com"
                   placeholderTextColor={colors.muted}
                   autoCapitalize="none"
                   autoCorrect={false}
