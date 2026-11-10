@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  DeviceEventEmitter,
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -256,6 +257,15 @@ export default function PlayerScreen() {
   }, streamFormat.format);
   const { tunedIn, status, volume, setVolume, tune, stop, toggleMute, muted } = player;
 
+  // Debounce tune() so simultaneous D-Pad press + TV key event never double-toggles.
+  const lastTuneToggleRef = useRef(0);
+  const debouncedTune = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTuneToggleRef.current < 350) return;
+    lastTuneToggleRef.current = now;
+    tune();
+  }, [tune]);
+
   // Private station (#478): the private player hides the whole face until the
   // password is in ('checking' counts as hidden, so a saved password still
   // being verified cannot flash it); stream-only auth prompts over the face.
@@ -269,7 +279,7 @@ export default function PlayerScreen() {
     tunedIn,
     status,
     stop,
-    tune,
+    tune: debouncedTune,
   });
   const hideFace = gate.solid && gate.phase !== 'ok';
   // A refused Station login (#1873) stops the player and covers it, over
@@ -295,8 +305,8 @@ export default function PlayerScreen() {
   );
   // A screen too short for the lyrics keeps the full track info, as the web
   // does; the lyrics settings say why nothing shows.
-  const { height: windowHeight } = useWindowDimensions();
-  const lyricsFit = windowHeight >= LYRICS_MIN_SCREEN_HEIGHT;
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const lyricsFit = windowHeight >= LYRICS_MIN_SCREEN_HEIGHT || (windowWidth > windowHeight && windowHeight >= 480);
   const lyricsPresent = showLyrics && lyricsFit && lyricsLinger;
 
   // Disarm on tune-out so the next listening session cannot inherit this timer.
@@ -409,6 +419,43 @@ export default function PlayerScreen() {
 
   // Share one sheet to avoid competing dismissal callbacks.
   const [activeSheet, setActiveSheet] = useState<SheetId | null>(null);
+  const activeSheetRef = useRef<SheetId | null>(null);
+  useEffect(() => {
+    activeSheetRef.current = activeSheet;
+  }, [activeSheet]);
+
+  // Amazon Fire TV Stick / Android TV Remote Key Handler
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = DeviceEventEmitter.addListener('HebigatTvKey', (key: string) => {
+      if (key === 'PLAY_PAUSE' || key === 'PLAY' || key === 'PAUSE') {
+        debouncedTune();
+        return;
+      }
+      if (key === 'STOP') {
+        stop();
+        return;
+      }
+      if (key === 'MENU') {
+        setActiveSheet((cur) => (cur ? null : 'panel'));
+        return;
+      }
+      // When no sheet is open, allow D-Pad Left/Right to switch pages and Select on Live to tune
+      if (!activeSheetRef.current) {
+        if (key === 'LEFT') {
+          const next = Math.max(0, activeRef.current - 1);
+          if (next !== activeRef.current) goToPage(next);
+        } else if (key === 'RIGHT') {
+          const next = Math.min(PAGES.length - 1, activeRef.current + 1);
+          if (next !== activeRef.current) goToPage(next);
+        } else if (key === 'SELECT' && activeRef.current === HOME_INDEX) {
+          debouncedTune();
+        }
+      }
+    });
+    return () => sub.remove();
+  }, [debouncedTune, stop, goToPage]);
+
   const openLyrics = useCallback(() => setActiveSheet('lyrics'), []);
   const stageLyrics = useMemo(
     () => (lyricsOn ? { shown: lyricsPref.shown, onOpen: openLyrics } : null),
@@ -598,7 +645,7 @@ export default function PlayerScreen() {
           <TransportBar
             tunedIn={tunedIn}
             status={status}
-            onTune={tune}
+            onTune={debouncedTune}
             offline={offline}
             volume={volume}
             setVolume={setVolume}

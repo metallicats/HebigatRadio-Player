@@ -1,5 +1,6 @@
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RotaryKnob from './RotaryKnob';
@@ -53,6 +54,8 @@ export default function TransportBar({
   const insets = useSafeAreaInsets();
   const { colors, mode } = useTheme();
   const connecting = status === 'connecting';
+  const [powerFocused, setPowerFocused] = useState(false);
+  const [muteFocused, setMuteFocused] = useState(false);
 
   const gripPct =
     latencyMs != null
@@ -79,7 +82,7 @@ export default function TransportBar({
     onToggleMute();
   };
 
-  const powerColor = offline ? colors.muted : tunedIn ? colors.accent : colors.ink;
+  const powerColor = offline ? colors.muted : tunedIn || powerFocused ? colors.accent : colors.ink;
 
   return (
     <View style={{ marginHorizontal: 16, marginBottom: insets.bottom + 12 }}>
@@ -98,119 +101,126 @@ export default function TransportBar({
           ]}
         />
         <View className="flex-row">
-        <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 11, paddingVertical: 13 }}>
-          <Pressable
-            onPress={handleTune}
-            disabled={offline}
-            accessibilityRole="button"
-            accessibilityLabel={offline ? 'Stream offline' : tunedIn ? 'Tune out' : 'Tune in'}
-            accessibilityState={{ disabled: offline, selected: tunedIn }}
-            style={{
-              width: 50,
-              height: 50,
-              borderRadius: 25,
-              borderWidth: 1.5,
-              borderColor: powerColor,
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: offline ? 0.4 : 1,
-              shadowColor: colors.accent,
-              shadowOpacity: tunedIn ? 0.5 : 0,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 0 },
-            }}
+          <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 11, paddingVertical: 13 }}>
+            <Pressable
+              onPress={handleTune}
+              onFocus={() => setPowerFocused(true)}
+              onBlur={() => setPowerFocused(false)}
+              focusable
+              disabled={offline}
+              accessibilityRole="button"
+              accessibilityLabel={offline ? 'Stream offline' : tunedIn ? 'Tune out' : 'Tune in'}
+              accessibilityState={{ disabled: offline, selected: tunedIn }}
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                borderWidth: powerFocused ? 2.5 : 1.5,
+                borderColor: powerColor,
+                backgroundColor: powerFocused ? `${colors.accent}26` : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: offline ? 0.4 : 1,
+                shadowColor: colors.accent,
+                shadowOpacity: tunedIn || powerFocused ? 0.5 : 0,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 0 },
+              }}
+            >
+              {connecting ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: powerColor }} />
+                  <View
+                    style={{ position: 'absolute', top: 0, left: '50%', marginLeft: -1, width: 2, height: 8, backgroundColor: powerColor }}
+                  />
+                </View>
+              )}
+            </Pressable>
+          </View>
+
+          <View
+            style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 10, borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.softBorder }}
           >
-            {connecting ? (
-              <ActivityIndicator size="small" color={colors.accent} />
-            ) : (
-              <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: powerColor }} />
+            <View className="flex-row items-baseline justify-between" style={{ gap: 6 }}>
+              <Text className="font-mono text-ink" style={{ fontSize: 10, flexShrink: 1 }} numberOfLines={1}>
+                {castingTo ? 'Cast · ' : ''}
+                <Text
+                  style={{
+                    color: castingTo || qualityActive ? colors.accent : colors.muted,
+                    fontWeight: '700',
+                  }}
+                >
+                  {castingTo || qualityLabel}
+                </Text>
+              </Text>
+              <Text className="font-mono text-muted" style={{ fontSize: 10 }} numberOfLines={1}>
+                {readout}
+              </Text>
+            </View>
+
+            <View style={{ height: 20, marginTop: 7 }}>
+              <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between' }}>
+                {Array.from({ length: TICKS }).map((_, i) => (
+                  <View
+                    key={i}
+                    style={{ width: 1, backgroundColor: i % 2 === 0 ? colors.muted : colors.softBorder, opacity: i % 2 === 0 ? 0.5 : 1 }}
+                  />
+                ))}
+              </View>
+              <View style={{ position: 'absolute', top: -2, bottom: -2, left: `${gripPct}%`, width: 10, marginLeft: -5, alignItems: 'center' }}>
+                <View style={{ position: 'absolute', top: 0, bottom: 0, width: 3, backgroundColor: colors.accent }} />
                 <View
-                  style={{ position: 'absolute', top: 0, left: '50%', marginLeft: -1, width: 2, height: 8, backgroundColor: powerColor }}
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    marginTop: -6.5,
+                    width: 10,
+                    height: 13,
+                    borderRadius: 1,
+                    backgroundColor: colors.accent,
+                    shadowColor: colors.accent,
+                    shadowOpacity: 0.5,
+                    shadowRadius: 4,
+                    shadowOffset: { width: 0, height: 0 },
+                  }}
                 />
               </View>
-            )}
-          </Pressable>
-        </View>
+            </View>
 
-        <View
-          style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 10, borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.softBorder }}
-        >
-          <View className="flex-row items-baseline justify-between" style={{ gap: 6 }}>
-            <Text className="font-mono text-ink" style={{ fontSize: 10, flexShrink: 1 }} numberOfLines={1}>
-              {castingTo ? 'Cast · ' : ''}
-              <Text
-                style={{
-                  color: castingTo || qualityActive ? colors.accent : colors.muted,
-                  fontWeight: '700',
-                }}
-              >
-                {castingTo || qualityLabel}
-              </Text>
-            </Text>
-            <Text className="font-mono text-muted" style={{ fontSize: 10 }} numberOfLines={1}>
-              {readout}
-            </Text>
-          </View>
-
-          <View style={{ height: 20, marginTop: 7 }}>
-            <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between' }}>
-              {Array.from({ length: TICKS }).map((_, i) => (
-                <View
-                  key={i}
-                  style={{ width: 1, backgroundColor: i % 2 === 0 ? colors.muted : colors.softBorder, opacity: i % 2 === 0 ? 0.5 : 1 }}
-                />
+            <View className="flex-row justify-between" style={{ marginTop: 4 }}>
+              {RULER.map((n) => (
+                <Text key={n} className="font-mono text-muted" style={{ fontSize: 8.5 }}>
+                  {n}
+                </Text>
               ))}
             </View>
-            <View style={{ position: 'absolute', top: -2, bottom: -2, left: `${gripPct}%`, width: 10, marginLeft: -5, alignItems: 'center' }}>
-              <View style={{ position: 'absolute', top: 0, bottom: 0, width: 3, backgroundColor: colors.accent }} />
-              <View
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  marginTop: -6.5,
-                  width: 10,
-                  height: 13,
-                  borderRadius: 1,
-                  backgroundColor: colors.accent,
-                  shadowColor: colors.accent,
-                  shadowOpacity: 0.5,
-                  shadowRadius: 4,
-                  shadowOffset: { width: 0, height: 0 },
-                }}
-              />
-            </View>
           </View>
 
-          <View className="flex-row justify-between" style={{ marginTop: 4 }}>
-            {RULER.map((n) => (
-              <Text key={n} className="font-mono text-muted" style={{ fontSize: 8.5 }}>
-                {n}
-              </Text>
-            ))}
+          <View className="flex-row items-center" style={{ gap: 9, paddingHorizontal: 11, paddingVertical: 13 }}>
+            <RotaryKnob value={muted ? 0 : volume} onChange={(v) => { setVolume(v); if (muted) handleMute(); }} />
+            <Pressable
+              onPress={handleMute}
+              onFocus={() => setMuteFocused(true)}
+              onBlur={() => setMuteFocused(false)}
+              focusable
+              accessibilityRole="button"
+              accessibilityLabel={muted ? 'Unmute' : 'Mute'}
+              accessibilityState={{ selected: muted }}
+              style={{
+                width: 36,
+                height: 36,
+                borderWidth: muteFocused ? 2 : 1,
+                borderColor: muted || muteFocused ? colors.accent : colors.muted,
+                backgroundColor: muted || muteFocused ? `${colors.accent}1a` : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <DotGrille color={muted || muteFocused ? colors.accent : colors.muted} />
+            </Pressable>
           </View>
-        </View>
-
-        <View className="flex-row items-center" style={{ gap: 9, paddingHorizontal: 11, paddingVertical: 13 }}>
-          <RotaryKnob value={muted ? 0 : volume} onChange={(v) => { setVolume(v); if (muted) handleMute(); }} />
-          <Pressable
-            onPress={handleMute}
-            accessibilityRole="button"
-            accessibilityLabel={muted ? 'Unmute' : 'Mute'}
-            accessibilityState={{ selected: muted }}
-            style={{
-              width: 36,
-              height: 36,
-              borderWidth: 1,
-              borderColor: muted ? colors.accent : colors.muted,
-              backgroundColor: muted ? `${colors.accent}1a` : 'transparent',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <DotGrille color={muted ? colors.accent : colors.muted} />
-          </Pressable>
-        </View>
         </View>
       </View>
     </View>

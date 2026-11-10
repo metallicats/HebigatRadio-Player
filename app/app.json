@@ -3,8 +3,8 @@
     "name": "Hebigat Radio",
     "slug": "subwave",
     "scheme": "hebigatradio",
-    "version": "1.6.1",
-    "orientation": "portrait",
+    "version": "1.0.0",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "runtimeVersion": {
@@ -39,6 +39,7 @@
     },
     "android": {
       "package": "com.didaskitchen.hebigatradio",
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#0b101b",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -99,6 +100,7 @@
       ],
       "./plugins/withAndroidUserCaTrust",
       "./plugins/withGradleMemory",
+      "./plugins/withAndroidTv",
       [
         "expo-secure-store",
         {

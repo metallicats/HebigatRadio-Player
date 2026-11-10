@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { Captions, CaptionsOff, Coins, Heart } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import CoverArt from './CoverArt';
 import DjThinkingLine from './DjThinkingLine';
 import type { TrackLike } from '@/hooks/useTrackLike';
@@ -68,6 +68,8 @@ export default function CenterStage({
   compact = false,
 }: CenterStageProps) {
   const { colors } = useTheme();
+  const { width: winW, height: winH } = useWindowDimensions();
+  const isWidescreenTv = winW > winH && winH < 660;
   const has = !!nowPlaying?.title;
   const duration = nowPlaying?.duration ?? 0;
   const subsonicId = nowPlaying?.subsonic_id ?? null;
@@ -110,7 +112,7 @@ export default function CenterStage({
   const LyricsIcon = lyrics?.shown ? Captions : CaptionsOff;
 
   const metaRow = (
-    <View className="flex-row items-center" style={{ marginBottom: compact ? 4 : 12, gap: 5 }}>
+    <View className="flex-row items-center" style={{ marginBottom: compact ? 4 : isWidescreenTv ? 6 : 12, gap: 5 }}>
       <Text className="font-mono text-muted" style={{ fontSize: 11, letterSpacing: 2 }}>
         {caption}
       </Text>
@@ -196,6 +198,64 @@ export default function CenterStage({
           <Text className="font-body-medium text-ink" style={{ fontSize: 14, marginTop: 2 }} numberOfLines={1}>
             {nowPlaying?.artist || 'Unknown artist'}
           </Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (isWidescreenTv) {
+    return (
+      <View className="flex-1 flex-row items-center px-8" style={{ gap: 24 }}>
+        {coverSrc ? (
+          <CoverArt
+            uri={coverSrc}
+            headers={coverHeaders}
+            live={live}
+            burst={burst}
+            size={140}
+            onPress={onOpenTimeline}
+          />
+        ) : null}
+        <View style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}>
+          {metaRow}
+          {has ? (
+            <>
+              <Text className="font-display text-ink" style={{ fontSize: 28, lineHeight: 32 }} numberOfLines={2}>
+                {nowPlaying?.title}
+              </Text>
+              <Text className="font-body-medium mt-1" style={{ fontSize: 16, color: colors.muted }} numberOfLines={1}>
+                <Text style={{ color: colors.ink }}>{nowPlaying?.artist || 'Unknown artist'}</Text>
+                {nowPlaying?.album ? `  ·  ${nowPlaying.album}` : ''}
+                {nowPlaying?.year ? `  ·  ${nowPlaying.year}` : ''}
+              </Text>
+              {hasMeta ? (
+                <Text
+                  className="font-mono mt-1.5"
+                  style={{ fontSize: 11, letterSpacing: 1.5, color: colors.muted }}
+                  numberOfLines={1}
+                >
+                  {metaTokens.join(' · ')}
+                  {moodPhrase ? (
+                    <Text style={{ color: colors.accent }}>
+                      {metaTokens.length > 0 ? ' · ' : ''}↳ {moodPhrase}
+                    </Text>
+                  ) : null}
+                </Text>
+              ) : null}
+            </>
+          ) : (
+            <Text className="font-display text-muted" style={{ fontSize: 26, lineHeight: 30 }}>
+              scanning the dial_
+            </Text>
+          )}
+          {has ? (
+            <DjThinkingLine
+              feed={feed}
+              enabled={djLineOn}
+              currentTrackId={subsonicId}
+              onOpenBooth={onOpenBooth}
+            />
+          ) : null}
         </View>
       </View>
     );
