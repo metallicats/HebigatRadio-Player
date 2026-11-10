@@ -17,7 +17,7 @@ import { useFonts } from 'expo-font';
 import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 // Gesture-handler root interceptors block Android taps under New Architecture (#458).
 // Use core Modal sheets.
@@ -47,7 +47,7 @@ function SplashGate({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Fraunces_400Regular,
     Fraunces_600SemiBold,
     PlusJakartaSans_400Regular,
@@ -56,8 +56,17 @@ export default function RootLayout() {
     JetBrainsMono_400Regular,
     JetBrainsMono_500Medium,
   });
+  const [fontTimeout, setFontTimeout] = useState(false);
 
-  if (!fontsLoaded) return null;
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setFontTimeout(true);
+      SplashScreen.hideAsync().catch(() => {});
+    }, 1500);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!fontsLoaded && !fontError && !fontTimeout) return null;
 
   return (
     <View style={{ flex: 1 }}>

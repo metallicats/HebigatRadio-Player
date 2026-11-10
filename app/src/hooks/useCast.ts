@@ -2,6 +2,7 @@
 // Authenticated stations stay on local playback.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import {
   MediaPlayerState,
   useCastDevice,
@@ -32,6 +33,22 @@ export interface CastInfo {
 }
 
 export function useCast(
+  api: StationApi | null,
+  local: Player,
+  meta: CastMeta,
+): { player: Player; cast: CastInfo } {
+  if (Platform.isTV) {
+    return {
+      player: local,
+      cast: { available: false, connected: false, deviceName: null },
+    };
+  }
+  // Platform.isTV is a static constant for the lifetime of the app process.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useCastMobile(api, local, meta);
+}
+
+function useCastMobile(
   api: StationApi | null,
   local: Player,
   meta: CastMeta,

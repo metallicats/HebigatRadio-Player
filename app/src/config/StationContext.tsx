@@ -88,6 +88,9 @@ export function StationProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let alive = true;
+    const safetyTimer = setTimeout(() => {
+      if (alive) setReady(true);
+    }, 1200);
     loadStations().then(async (s) => {
       let activeCredentials: StationCredentials | null = null;
       let activePassword: string | null = null;
@@ -105,16 +108,21 @@ export function StationProvider({ children }: { children: React.ReactNode }) {
         // Same: a locked station then asks again rather than failing to boot.
       }
       if (alive) {
+        clearTimeout(safetyTimer);
         setStore(s);
         setCredentials(activeCredentials);
         setStationPassword(activePassword);
         setReady(true);
       }
     }).catch(() => {
-      if (alive) setReady(true);
+      if (alive) {
+        clearTimeout(safetyTimer);
+        setReady(true);
+      }
     });
     return () => {
       alive = false;
+      clearTimeout(safetyTimer);
     };
   }, [setStationPassword]);
 

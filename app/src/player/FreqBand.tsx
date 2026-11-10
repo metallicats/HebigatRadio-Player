@@ -18,13 +18,14 @@ export interface FreqBandProps {
   /** pagerWidth * (pages - 1): the scroll position of the last page. */
   maxScroll: number;
   onPick: (i: number) => void;
+  tvFocusedTabs?: boolean;
 }
 
 const TICKS = 41;
 // Stops and needle live within the 8%-92% inner band.
 const stopPct = (i: number, n: number) => 8 + (i * 84) / (n - 1);
 
-function FreqBand({ pages, active, scrollX, maxScroll, onPick }: FreqBandProps) {
+function FreqBand({ pages, active, scrollX, maxScroll, onPick, tvFocusedTabs }: FreqBandProps) {
   const { colors } = useTheme();
   const [bandW, setBandW] = useState(0);
 
@@ -124,7 +125,14 @@ function FreqBand({ pages, active, scrollX, maxScroll, onPick }: FreqBandProps) 
               />
               <Text
                 className="font-mono"
-                style={{ marginTop: 3, fontSize: 8, letterSpacing: 1, fontWeight: '700', color: on ? colors.ink : colors.muted }}
+                style={{
+                  marginTop: 3,
+                  fontSize: 8,
+                  letterSpacing: 1,
+                  fontWeight: '700',
+                  color: on ? (tvFocusedTabs ? colors.accent : colors.ink) : colors.muted,
+                  textDecorationLine: on && tvFocusedTabs ? 'underline' : 'none',
+                }}
               >
                 {p.abbr}
               </Text>

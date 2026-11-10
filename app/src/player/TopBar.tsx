@@ -17,6 +17,8 @@ export interface TopBarProps {
   onOpenPanel: () => void;
   /** Show an accent dot when sleep or casting is active. */
   panelActive: boolean;
+  /** Highlight the Back Panel button when focused via TV remote. */
+  tvFocusedPanel?: boolean;
 }
 
 export default function TopBar({
@@ -27,6 +29,7 @@ export default function TopBar({
   activeShow,
   onOpenPanel,
   panelActive,
+  tvFocusedPanel,
 }: TopBarProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -70,9 +73,20 @@ export default function TopBar({
             accessibilityRole="button"
             accessibilityLabel={panelActive ? 'Back panel (active)' : 'Back panel'}
             accessibilityState={{ selected: panelActive }}
+            style={
+              tvFocusedPanel
+                ? {
+                    borderWidth: 2,
+                    borderColor: colors.accent,
+                    borderRadius: 6,
+                    padding: 4,
+                    backgroundColor: `${colors.accent}24`,
+                  }
+                : { padding: 4 }
+            }
           >
             <View>
-              <SlidersHorizontal size={18} color={panelActive ? colors.accent : colors.muted} />
+              <SlidersHorizontal size={18} color={panelActive || tvFocusedPanel ? colors.accent : colors.muted} />
               {panelActive ? (
                 <View
                   style={{

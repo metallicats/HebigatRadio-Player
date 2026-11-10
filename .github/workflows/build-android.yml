@@ -60,36 +60,36 @@ jobs:
       - name: Prepare Release Artifacts
         run: |
           mkdir -p dist
-          cp app/android/app/build/outputs/apk/release/app-release.apk dist/HebigatRadio-v1.0.0-vc4-firetv-android.apk
-          cp app/android/app/build/outputs/bundle/release/app-release.aab dist/HebigatRadio-v1.0.0-vc4-playstore.aab
+          cp app/android/app/build/outputs/apk/release/app-release.apk dist/HebigatRadio-v1.0.0-vc5-firetv-android.apk
+          cp app/android/app/build/outputs/bundle/release/app-release.aab dist/HebigatRadio-v1.0.0-vc5-playstore.aab
           ls -lh dist/
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: HebigatRadio-v1.0.0-vc4-release
+          name: HebigatRadio-v1.0.0-vc5-release
           path: |
-            dist/HebigatRadio-v1.0.0-vc4-firetv-android.apk
-            dist/HebigatRadio-v1.0.0-vc4-playstore.aab
+            dist/HebigatRadio-v1.0.0-vc5-firetv-android.apk
+            dist/HebigatRadio-v1.0.0-vc5-playstore.aab
           if-no-files-found: error
 
       - name: Publish GitHub Release v1.0.0
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0
-          name: Hebigat Radio v1.0.0 (Version Code 4 - Amazon Fire TV Stick & Google Play)
+          name: Hebigat Radio v1.0.0 (Version Code 5 - Amazon Fire TV Stick, Google TV & Play Store)
           body: |
-            ## Hebigat Radio v1.0.0 (Version Code 4)
-            - **Amazon Fire TV Stick (Fire OS) & Android TV support**:
-              - Added Leanback TV launcher intent (`LEANBACK_LAUNCHER`) and 320×180 TV home screen banner (`tv_banner`).
-              - Declared `android.hardware.touchscreen`, `android.software.leanback`, and `android.hardware.wifi` as non-required (`required="false"`) for universal TV + phone compatibility.
-              - Added 16:9 widescreen TV layout and Amazon Fire TV Remote D-Pad / Media Play-Pause key handling.
+            ## Hebigat Radio v1.0.0 (Version Code 5)
+            - **Amazon Fire TV Stick (Fire OS) & Google TV / Android TV support**:
+              - Added Leanback TV launcher intent filters (`LEANBACK_LAUNCHER` + `LAUNCHER`) in `app.json` and `AndroidManifest.xml`, plus 320×180 TV banner (`tv_banner`) on both `<application>` and `<activity>`.
+              - Enabled `extractNativeLibs="true"` (`useLegacyPackaging=true`) and disabled `edgeToEdgeEnabled` + `expo-updates` on boot so 32-bit Fire OS devices launch reliably.
+              - Added 1-click TV Remote Power button (`PLAY (OK)` / `STOP (OK)`) pre-focused on launch via `MainActivity.dispatchKeyEvent`.
             - **Downloads**:
-              - `HebigatRadio-v1.0.0-vc4-firetv-android.apk` — Signed universal APK for Amazon Fire TV Stick (sideload / Amazon Appstore) and Android devices.
-              - `HebigatRadio-v1.0.0-vc4-playstore.aab` — Signed Android App Bundle (`.aab`) for Google Play Console (Closed Testing / Production).
+              - `HebigatRadio-v1.0.0-vc5-firetv-android.apk` — Signed universal APK for Amazon Fire TV Stick, Google TV, and Android devices.
+              - `HebigatRadio-v1.0.0-vc5-playstore.aab` — Signed Android App Bundle (`.aab`) for Google Play Console (Closed Testing / Production).
           files: |
-            dist/HebigatRadio-v1.0.0-vc4-firetv-android.apk
-            dist/HebigatRadio-v1.0.0-vc4-playstore.aab
+            dist/HebigatRadio-v1.0.0-vc5-firetv-android.apk
+            dist/HebigatRadio-v1.0.0-vc5-playstore.aab
           draft: false
           prerelease: false
         env:

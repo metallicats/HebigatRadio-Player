@@ -1,20 +1,24 @@
 // Expo config plugin: Amazon Fire TV Stick (Fire OS) & Android TV compatibility.
 //
-// 1. Declares android.hardware.touchscreen as NOT required so Fire TV / Android TV
-//    stores and devices accept the APK/AAB.
-// 2. Declares android.software.leanback as optional (required="false") so the same
-//    build runs on both TVs (Fire TV Stick, Google TV) and phones/tablets.
-// 3. Adds category LEANBACK_LAUNCHER to MainActivity and sets android:banner
-//    so the app icon/banner appears natively on Fire TV & Android TV home screens.
-// 4. Unlocks screenOrientation ("unspecified") so Fire TV displays in 16:9 widescreen
-//    landscape instead of forcing portrait mode.
-// 5. Forwards Fire TV Remote D-Pad and Media Play/Pause keys to JS via
-//    DeviceEventEmitter ("HebigatTvKey").
+// 1. Declares non-TV hardware features (touchscreen, faketouch, telephony, camera,
+//    gps, microphone, wifi, leanback) as android:required="false" so Fire OS and
+//    Google TV accept and launch the APK/AAB without hardware rejections.
+// 2. Adds both a combined MAIN + LAUNCHER + LEANBACK_LAUNCHER intent-filter and a
+//    dedicated MAIN + LEANBACK_LAUNCHER intent-filter on MainActivity, plus sets
+//    android:banner="@drawable/tv_banner" on both <application> and <activity>.
+// 3. Sets android:extractNativeLibs="true" and expo.useLegacyPackaging=true so
+//    32-bit Fire OS devices cleanly extract native .so libraries on install.
+// 4. Disables edgeToEdgeEnabled and wraps SplashScreen + CastContext initialization
+//    in try/catch so Fire OS (which lacks Google Play Services) never crashes on boot.
+// 5. Overrides MainActivity.dispatchKeyEvent to forward all TV remote D-Pad and
+//    Media keys to JS via DeviceEventEmitter ("HebigatTvKey") before any ScrollView
+//    can swallow them.
 
 const {
   withAndroidManifest,
   withAppBuildGradle,
   withDangerousMod,
+  withGradleProperties,
   withMainActivity,
 } = require('@expo/config-plugins');
 const fs = require('fs');
@@ -39,17 +43,50 @@ function ensureUsesFeature(manifest, name, required = 'false') {
   }
 }
 
+function setMetaData(app, name, value) {
+  if (!app['meta-data']) {
+    app['meta-data'] = [];
+  }
+  const existing = app['meta-data'].find((m) => m.$?.['android:name'] === name);
+  if (existing) {
+    existing.$['android:value'] = value;
+  } else {
+    app['meta-data'].push({
+      $: {
+        'android:name': name,
+        'android:value': value,
+      },
+    });
+  }
+}
+
 function withTvManifest(config) {
   return withAndroidManifest(config, (cfg) => {
     const manifest = cfg.modResults.manifest;
 
-    ensureUsesFeature(manifest, 'android.hardware.touchscreen', 'false');
-    ensureUsesFeature(manifest, 'android.software.leanback', 'false');
-    ensureUsesFeature(manifest, 'android.hardware.wifi', 'false');
+    const optionalFeatures = [
+      'android.hardware.touchscreen',
+      'android.software.leanback',
+      'android.hardware.wifi',
+      'android.hardware.faketouch',
+      'android.hardware.telephony',
+      'android.hardware.camera',
+      'android.hardware.microphone',
+      'android.hardware.location',
+      'android.hardware.location.gps',
+    ];
+    for (const feat of optionalFeatures) {
+      ensureUsesFeature(manifest, feat, 'false');
+    }
 
     const app = manifest.application?.[0];
     if (app) {
       app.$['android:banner'] = '@drawable/tv_banner';
+      app.$['android:extractNativeLibs'] = 'true';
+
+      // Prevent expo-updates from blocking or crashing startup on sideloaded Fire TV builds
+      setMetaData(app, 'expo.modules.updates.ENABLED', 'false');
+      setMetaData(app, 'expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH', 'NEVER');
 
       const mainActivity = app.activity?.find(
         (a) =>
@@ -58,33 +95,58 @@ function withTvManifest(config) {
       );
       if (mainActivity) {
         mainActivity.$['android:screenOrientation'] = 'unspecified';
+        mainActivity.$['android:banner'] = '@drawable/tv_banner';
+        mainActivity.$['android:exported'] = 'true';
 
         if (!mainActivity['intent-filter']) {
           mainActivity['intent-filter'] = [];
         }
-        const launcherFilter = mainActivity['intent-filter'].find((f) =>
-          f.action?.some(
-            (act) => act.$?.['android:name'] === 'android.intent.action.MAIN',
-          ),
+
+        // Keep non-MAIN intent filters (like deep links)
+        const nonMainFilters = mainActivity['intent-filter'].filter(
+          (f) =>
+            !f.action?.some(
+              (act) => act.$?.['android:name'] === 'android.intent.action.MAIN',
+            ),
         );
-        if (launcherFilter) {
-          if (!launcherFilter.category) launcherFilter.category = [];
-          const hasLeanback = launcherFilter.category.some(
-            (c) =>
-              c.$?.['android:name'] ===
-              'android.intent.category.LEANBACK_LAUNCHER',
-          );
-          if (!hasLeanback) {
-            launcherFilter.category.push({
-              $: {
-                'android:name': 'android.intent.category.LEANBACK_LAUNCHER',
-              },
-            });
-          }
-        }
+
+        // Add standard mobile LAUNCHER filter + dedicated LEANBACK_LAUNCHER filter for Fire OS / Android TV
+        mainActivity['intent-filter'] = [
+          {
+            action: [{ $: { 'android:name': 'android.intent.action.MAIN' } }],
+            category: [
+              { $: { 'android:name': 'android.intent.category.LAUNCHER' } },
+              { $: { 'android:name': 'android.intent.category.LEANBACK_LAUNCHER' } },
+            ],
+          },
+          {
+            action: [{ $: { 'android:name': 'android.intent.action.MAIN' } }],
+            category: [
+              { $: { 'android:name': 'android.intent.category.LEANBACK_LAUNCHER' } },
+            ],
+          },
+          ...nonMainFilters,
+        ];
       }
     }
 
+    return cfg;
+  });
+}
+
+function withTvGradleProperties(config) {
+  return withGradleProperties(config, (cfg) => {
+    const props = cfg.modResults;
+    const setProp = (key, value) => {
+      const idx = props.findIndex((p) => p.type === 'property' && p.key === key);
+      if (idx !== -1) {
+        props[idx].value = value;
+      } else {
+        props.push({ type: 'property', key, value });
+      }
+    };
+    setProp('expo.useLegacyPackaging', 'true');
+    setProp('edgeToEdgeEnabled', 'false');
     return cfg;
   });
 }
@@ -126,32 +188,48 @@ function withTvKeyEvents(config) {
       );
     }
 
+    // Guard SplashScreenManager and RNGCCastContext against crashing on Fire OS (no Play Services)
+    contents = contents.replace(
+      /^\s*SplashScreenManager\.registerOnActivity\(this\)\s*$/m,
+      '    try { SplashScreenManager.registerOnActivity(this) } catch (_: Throwable) {}',
+    );
+    contents = contents.replace(
+      /^\s*RNGCCastContext\.getSharedInstance\(this\)\s*$/m,
+      '    try { RNGCCastContext.getSharedInstance(this) } catch (_: Throwable) {}',
+    );
+
     if (!contents.includes('HebigatTvKey')) {
       const keyHandler = `
-  override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-    val actionName = when (keyCode) {
-      KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> "PLAY_PAUSE"
-      KeyEvent.KEYCODE_MEDIA_PLAY -> "PLAY"
-      KeyEvent.KEYCODE_MEDIA_PAUSE -> "PAUSE"
-      KeyEvent.KEYCODE_MEDIA_STOP -> "STOP"
-      KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> "SELECT"
-      KeyEvent.KEYCODE_DPAD_LEFT -> "LEFT"
-      KeyEvent.KEYCODE_DPAD_RIGHT -> "RIGHT"
-      KeyEvent.KEYCODE_DPAD_UP -> "UP"
-      KeyEvent.KEYCODE_DPAD_DOWN -> "DOWN"
-      KeyEvent.KEYCODE_MENU -> "MENU"
-      else -> null
+  override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+    if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+      val actionName = when (event.keyCode) {
+        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> "PLAY_PAUSE"
+        KeyEvent.KEYCODE_MEDIA_PLAY -> "PLAY"
+        KeyEvent.KEYCODE_MEDIA_PAUSE -> "PAUSE"
+        KeyEvent.KEYCODE_MEDIA_STOP -> "STOP"
+        KeyEvent.KEYCODE_DPAD_CENTER,
+        KeyEvent.KEYCODE_ENTER,
+        KeyEvent.KEYCODE_NUMPAD_ENTER,
+        KeyEvent.KEYCODE_SPACE,
+        KeyEvent.KEYCODE_BUTTON_A -> "SELECT"
+        KeyEvent.KEYCODE_DPAD_LEFT -> "LEFT"
+        KeyEvent.KEYCODE_DPAD_RIGHT -> "RIGHT"
+        KeyEvent.KEYCODE_DPAD_UP -> "UP"
+        KeyEvent.KEYCODE_DPAD_DOWN -> "DOWN"
+        KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_SETTINGS -> "MENU"
+        else -> null
+      }
+      if (actionName != null) {
+        try {
+          (application as? ReactApplication)
+            ?.reactHost
+            ?.currentReactContext
+            ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+            ?.emit("HebigatTvKey", actionName)
+        } catch (_: Throwable) {}
+      }
     }
-    if (actionName != null && (event?.repeatCount ?: 0) == 0) {
-      try {
-        (application as? ReactApplication)
-          ?.reactHost
-          ?.currentReactContext
-          ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-          ?.emit("HebigatTvKey", actionName)
-      } catch (_: Throwable) {}
-    }
-    return super.onKeyDown(keyCode, event)
+    return super.dispatchKeyEvent(event)
   }
 `;
       const lastBrace = contents.lastIndexOf('}');
@@ -206,6 +284,8 @@ function withReleaseSigning(config) {
 
 module.exports = function withAndroidTv(config) {
   return withReleaseSigning(
-    withTvKeyEvents(withTvBannerDrawable(withTvManifest(config))),
+    withTvGradleProperties(
+      withTvKeyEvents(withTvBannerDrawable(withTvManifest(config))),
+    ),
   );
 };

@@ -62,7 +62,7 @@ import PagePanel from './PagePanel';
 import StageLyrics from './StageLyrics';
 import StationGate from './StationGate';
 import TopBar from './TopBar';
-import TransportBar from './TransportBar';
+import TransportBar, { type TvFocusZone } from './TransportBar';
 import Waveform from './Waveform';
 import AboutDrawer from './drawers/AboutDrawer';
 import BackPanelDrawer from './drawers/BackPanelDrawer';
@@ -424,15 +424,32 @@ export default function PlayerScreen() {
     activeSheetRef.current = activeSheet;
   }, [activeSheet]);
 
-  // Amazon Fire TV Stick / Android TV Remote Key Handler
+  // Default TV remote focus to the Power button ('power') so pressing OK/Select
+  // immediately starts or stops the stream on Google TV and Amazon Fire TV Stick.
+  const [tvFocus, setTvFocus] = useState<TvFocusZone | null>(
+    Platform.isTV || windowWidth > windowHeight ? 'power' : null,
+  );
+  const tvFocusRef = useRef<TvFocusZone>('power');
+  useEffect(() => {
+    if (tvFocus) tvFocusRef.current = tvFocus;
+  }, [tvFocus]);
+  useEffect(() => {
+    if ((Platform.isTV || windowWidth > windowHeight) && tvFocus === null) {
+      setTvFocus('power');
+    }
+  }, [windowWidth, windowHeight, tvFocus]);
+
+  // Amazon Fire TV Stick / Google TV Remote Key Handler
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const sub = DeviceEventEmitter.addListener('HebigatTvKey', (key: string) => {
       if (key === 'PLAY_PAUSE' || key === 'PLAY' || key === 'PAUSE') {
+        setTvFocus('power');
         debouncedTune();
         return;
       }
       if (key === 'STOP') {
+        setTvFocus('power');
         stop();
         return;
       }
@@ -440,21 +457,52 @@ export default function PlayerScreen() {
         setActiveSheet((cur) => (cur ? null : 'panel'));
         return;
       }
-      // When no sheet is open, allow D-Pad Left/Right to switch pages and Select on Live to tune
+      // When no sheet is open, navigate between Power, Mute, Page Tabs, and Back Panel
       if (!activeSheetRef.current) {
-        if (key === 'LEFT') {
-          const next = Math.max(0, activeRef.current - 1);
-          if (next !== activeRef.current) goToPage(next);
+        const curZone = tvFocusRef.current;
+        if (key === 'SELECT') {
+          if (curZone === 'mute') {
+            toggleMute();
+          } else if (curZone === 'panel') {
+            setActiveSheet('panel');
+          } else if (curZone === 'tabs' && activeRef.current !== HOME_INDEX) {
+            goHome();
+            setTvFocus('power');
+          } else {
+            setTvFocus('power');
+            debouncedTune();
+          }
+        } else if (key === 'DOWN') {
+          if (curZone === 'panel') {
+            setTvFocus('tabs');
+          } else {
+            setTvFocus('power');
+          }
+        } else if (key === 'UP') {
+          if (curZone === 'power' || curZone === 'mute') {
+            setTvFocus('tabs');
+          } else if (curZone === 'tabs') {
+            setTvFocus('panel');
+          }
+        } else if (key === 'LEFT') {
+          if (curZone === 'mute') {
+            setTvFocus('power');
+          } else {
+            const next = Math.max(0, activeRef.current - 1);
+            if (next !== activeRef.current) goToPage(next);
+          }
         } else if (key === 'RIGHT') {
-          const next = Math.min(PAGES.length - 1, activeRef.current + 1);
-          if (next !== activeRef.current) goToPage(next);
-        } else if (key === 'SELECT' && activeRef.current === HOME_INDEX) {
-          debouncedTune();
+          if (curZone === 'power') {
+            setTvFocus('mute');
+          } else {
+            const next = Math.min(PAGES.length - 1, activeRef.current + 1);
+            if (next !== activeRef.current) goToPage(next);
+          }
         }
       }
     });
     return () => sub.remove();
-  }, [debouncedTune, stop, goToPage]);
+  }, [debouncedTune, stop, toggleMute, goToPage, goHome]);
 
   const openLyrics = useCallback(() => setActiveSheet('lyrics'), []);
   const stageLyrics = useMemo(
@@ -541,6 +589,7 @@ export default function PlayerScreen() {
               ref={pagerRef}
               horizontal
               pagingEnabled
+              focusable={false}
               showsHorizontalScrollIndicator={false}
               scrollEventThrottle={16}
               onScroll={onPagerScroll}
@@ -628,6 +677,7 @@ export default function PlayerScreen() {
             activeShow={activeShow}
             onOpenPanel={() => setActiveSheet('panel')}
             panelActive={sleep.active || cast.connected || dlna.connected}
+            tvFocusedPanel={tvFocus === 'panel'}
           />
           <FreqBand
             pages={PAGES}
@@ -635,6 +685,7 @@ export default function PlayerScreen() {
             scrollX={scrollX}
             maxScroll={pagerW * (PAGES.length - 1)}
             onPick={goToPage}
+            tvFocusedTabs={tvFocus === 'tabs'}
           />
         </View>
 
@@ -655,6 +706,7 @@ export default function PlayerScreen() {
             signalQuality={signal.quality}
             listeners={listenerCount}
             castingTo={dlna.deviceName || cast.deviceName}
+            tvFocus={tvFocus}
           />
         </View>
       </SafeAreaView>

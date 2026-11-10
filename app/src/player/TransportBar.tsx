@@ -1,12 +1,14 @@
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RotaryKnob from './RotaryKnob';
 import { SCALE_MAX, type SignalQuality } from '@/hooks/useSignal';
 import type { PlayerStatus } from '@/hooks/usePlayer';
 import { useTheme } from '@/theme/ThemeContext';
+
+export type TvFocusZone = 'power' | 'mute' | 'tabs' | 'panel';
 
 export interface TransportBarProps {
   tunedIn: boolean;
@@ -23,6 +25,8 @@ export interface TransportBarProps {
   /** Cast device name while a session is active, else null. Swaps the Signal
    *  label for a "Cast · <device>" read. */
   castingTo?: string | null;
+  /** Active TV remote focus target so TV users always see which control OK clicks. */
+  tvFocus?: TvFocusZone | null;
 }
 
 const QUALITY_LABEL: Record<SignalQuality, string> = {
@@ -50,12 +54,18 @@ export default function TransportBar({
   signalQuality,
   listeners,
   castingTo,
+  tvFocus,
 }: TransportBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, mode } = useTheme();
+  const { width: winW, height: winH } = useWindowDimensions();
+  const isTvMode = Platform.isTV || winW > winH || tvFocus != null;
   const connecting = status === 'connecting';
   const [powerFocused, setPowerFocused] = useState(false);
   const [muteFocused, setMuteFocused] = useState(false);
+
+  const isPowerHighlighted = powerFocused || tvFocus === 'power';
+  const isMuteHighlighted = muteFocused || tvFocus === 'mute';
 
   const gripPct =
     latencyMs != null
@@ -82,7 +92,8 @@ export default function TransportBar({
     onToggleMute();
   };
 
-  const powerColor = offline ? colors.muted : tunedIn || powerFocused ? colors.accent : colors.ink;
+  const powerColor = offline ? colors.muted : tunedIn || isPowerHighlighted ? colors.accent : colors.ink;
+  const tvButtonProps = Platform.OS === 'android' ? ({ hasTVPreferredFocus: true } as Record<string, unknown>) : {};
 
   return (
     <View style={{ marginHorizontal: 16, marginBottom: insets.bottom + 12 }}>
@@ -103,6 +114,7 @@ export default function TransportBar({
         <View className="flex-row">
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 11, paddingVertical: 13 }}>
             <Pressable
+              {...tvButtonProps}
               onPress={handleTune}
               onFocus={() => setPowerFocused(true)}
               onBlur={() => setPowerFocused(false)}
@@ -112,18 +124,21 @@ export default function TransportBar({
               accessibilityLabel={offline ? 'Stream offline' : tunedIn ? 'Tune out' : 'Tune in'}
               accessibilityState={{ disabled: offline, selected: tunedIn }}
               style={{
-                width: 50,
+                minWidth: isTvMode ? 128 : 50,
                 height: 50,
+                paddingHorizontal: isTvMode ? 14 : 0,
                 borderRadius: 25,
-                borderWidth: powerFocused ? 2.5 : 1.5,
+                borderWidth: isPowerHighlighted ? 2.5 : 1.5,
                 borderColor: powerColor,
-                backgroundColor: powerFocused ? `${colors.accent}26` : 'transparent',
+                backgroundColor: isPowerHighlighted ? `${colors.accent}2e` : 'transparent',
+                flexDirection: 'row',
+                 gap: 8,
                 alignItems: 'center',
                 justifyContent: 'center',
                 opacity: offline ? 0.4 : 1,
                 shadowColor: colors.accent,
-                shadowOpacity: tunedIn || powerFocused ? 0.5 : 0,
-                shadowRadius: 8,
+                shadowOpacity: tunedIn || isPowerHighlighted ? 0.6 : 0,
+                shadowRadius: 10,
                 shadowOffset: { width: 0, height: 0 },
               }}
             >
@@ -137,6 +152,19 @@ export default function TransportBar({
                   />
                 </View>
               )}
+              {isTvMode ? (
+                <Text
+                  className="font-mono"
+                  style={{
+                    fontSize: 10,
+                    fontWeight: '700',
+                    letterSpacing: 1,
+                    color: powerColor,
+                  }}
+                >
+                  {connecting ? 'WAIT…' : tunedIn ? 'STOP (OK)' : 'PLAY (OK)'}
+                </Text>
+              ) : null}
             </Pressable>
           </View>
 
@@ -211,14 +239,14 @@ export default function TransportBar({
               style={{
                 width: 36,
                 height: 36,
-                borderWidth: muteFocused ? 2 : 1,
-                borderColor: muted || muteFocused ? colors.accent : colors.muted,
-                backgroundColor: muted || muteFocused ? `${colors.accent}1a` : 'transparent',
+                borderWidth: isMuteHighlighted ? 2.5 : 1,
+                borderColor: muted || isMuteHighlighted ? colors.accent : colors.muted,
+                backgroundColor: muted || isMuteHighlighted ? `${colors.accent}24` : 'transparent',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <DotGrille color={muted || muteFocused ? colors.accent : colors.muted} />
+              <DotGrille color={muted || isMuteHighlighted ? colors.accent : colors.muted} />
             </Pressable>
           </View>
         </View>

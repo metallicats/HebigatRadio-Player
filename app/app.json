@@ -11,8 +11,9 @@
       "policy": "fingerprint"
     },
     "updates": {
+      "enabled": false,
       "url": "https://u.expo.dev/b834b64c-f694-4f45-b3fa-0f2c0a4df5ba",
-      "checkAutomatically": "ON_LOAD",
+      "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0
     },
     "ios": {
@@ -39,13 +40,22 @@
     },
     "android": {
       "package": "com.didaskitchen.hebigatradio",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#0b101b",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "intentFilters": [
+        {
+          "action": "MAIN",
+          "category": [
+            "LEANBACK_LAUNCHER",
+            "LAUNCHER"
+          ]
+        }
+      ],
       "permissions": [
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
@@ -85,7 +95,8 @@
           "android": {
             "compileSdkVersion": 36,
             "targetSdkVersion": 36,
-            "usesCleartextTraffic": true
+            "usesCleartextTraffic": true,
+            "enableLegacyPackaging": true
           },
           "ios": {
             "deploymentTarget": "16.4"
