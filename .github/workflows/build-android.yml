@@ -32,9 +32,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: app/package-lock.json
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install dependencies
         working-directory: app
         run: npm ci
