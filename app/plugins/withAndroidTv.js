@@ -13,6 +13,7 @@
 
 const {
   withAndroidManifest,
+  withAppBuildGradle,
   withDangerousMod,
   withMainActivity,
 } = require('@expo/config-plugins');
@@ -165,6 +166,46 @@ function withTvKeyEvents(config) {
   });
 }
 
+function withReleaseSigning(config) {
+  return withAppBuildGradle(config, (cfg) => {
+    let contents = cfg.modResults.contents;
+    if (!contents.includes('ANDROID_KEYSTORE_PATH')) {
+      contents = contents.replace(
+        /signingConfigs\s*\{\s*debug\s*\{[\s\S]*?\}\s*\}/,
+        `signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        release {
+            if (System.getenv("ANDROID_KEYSTORE_PATH")) {
+                storeFile file(System.getenv("ANDROID_KEYSTORE_PATH"))
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            } else {
+                storeFile file('debug.keystore')
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
+            }
+        }
+    }`,
+      );
+      contents = contents.replace(
+        /release\s*\{\s*\/\/\s*Caution![\s\S]*?signingConfig\s+signingConfigs\.debug/,
+        `release {\n            signingConfig signingConfigs.release`,
+      );
+    }
+    cfg.modResults.contents = contents;
+    return cfg;
+  });
+}
+
 module.exports = function withAndroidTv(config) {
-  return withTvKeyEvents(withTvBannerDrawable(withTvManifest(config)));
+  return withReleaseSigning(
+    withTvKeyEvents(withTvBannerDrawable(withTvManifest(config))),
+  );
 };
